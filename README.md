@@ -1,76 +1,36 @@
-# Project Overview: Skill Route
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-**1. Project Name:** Skill Route
+## Getting Started
 
-**2. Project Description:**
+First, run the development server:
 
-Skill Route is an interactive educational platform designed to guide users through structured learning paths across diverse subjects. It provides visual roadmaps, interactive tutorials, quizzes, and a reward system to enhance the learning experience. The platform aims to make learning engaging and effective by combining visual progress tracking with practical exercises and gamified elements.
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-**3. Project Goals:**
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-* **Provide Structured Learning Paths:** Offer clear and organized roadmaps for learning various concepts.
-* **Enhance Learning Engagement:** Make learning interactive and enjoyable through quizzes, challenges, and rewards.
-* **Track User Progress:** Visually represent user progress through learning paths.
-* **Reinforce Learning:** Use quizzes and practical exercises to solidify understanding.
-* **Motivate Users:** Implement a coin system and rank system to encourage continuous learning.
-* **Offer Customization:** Allow users to personalize their experience through theme selection.
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-**4. Key Features:**
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-* **Visual Roadmaps:** Interactive representations of learning paths using a tree-like structure.
-* **User Profiles:** Display user's rank and points.
-* **Tutorial Lists:** Lists of available tutorials for various subjects.
-* **Interactive Quizzes:**
-    * Time-based quizzes.
-    * Multiple-choice quizzes.
-* **Coin System:** A reward system where users earn coins for completing tasks.
-* **Progress Tracking:** Visual progress bars to show user advancement.
-* **Theme System:** Allows users to switch between different themes.
-* **Interactive Challenges:** Includes math equations, coding challenges, and other interactive exercises.
-* **Personal User Sections:** User-specific sections (potentially for notes, resources, or personalized content).
+## Learn More
 
-**5. Target Audience:**
+To learn more about Next.js, take a look at the following resources:
 
-* Beginners and individuals seeking structured learning experiences.
-* Individuals interested in interactive and engaging learning platforms.
-* Lifelong learners across various domains.
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-**6. Technology Stack:**
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-* **Frontend:**
-    * Next.js (React framework)
-    * Tailwind CSS (styling)
-    * JavaScript (programming language)
-* **Data:**
-    * JSON (for storing tutorial and quiz data)
-* **Version Control:**
-    * Git (with GitHub)
+## Deploy on Vercel
 
-**7. Project Management:**
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-* **GitHub Issues:** For task management and bug tracking.
-* **GitHub Projects (Kanban):** For visualizing workflow and progress.
-* **Semantic Versioning:** For managing releases.
-* **Weekend-Based Development:** Tasks are broken down into Saturday and Sunday work sessions.
-* **Comprehensive Label System:** For categorization and prioritization of tasks.
-
-**8. Development Approach:**
-
-* **Iterative Development:** Building features incrementally and continuously improving.
-* **Component-Based Architecture:** Using React components for modular and reusable code.
-* **User-Centered Design:** Focusing on creating a user-friendly and intuitive interface.
-
-**9. Future Considerations:**
-
-* User authentication and data persistence.
-* Expanded content and topics across various domains.
-* Advanced quiz features (e.g., code challenges, interactive simulations).
-* Community features (e.g., forums, discussions, collaborative learning).
-* Deployment to a production environment.
-* Potentially adding user created content.
-
-**10. Current Status:**
-
-* Initial project setup and basic component structure.
-* Development is planned for weekends only.
-* Task management and versioning strategies are defined.
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
