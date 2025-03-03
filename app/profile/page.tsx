@@ -1,15 +1,26 @@
+import Link from "next/link";
 import React from "react";
 
 const Profile: React.FC = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-gray-100">
-      <div className="max-w-sm bg-white shadow-lg rounded-lg p-8 text-center">
-        <div className="w-24 h-24 bg-gray-300 rounded-full mx-auto"></div>
-        <h2 className="text-xl font-bold mt-4 text-gray-900">John Doe</h2>
-        <p className="text-gray-500">Software Developer</p>
-        <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          Edit Profile
-        </button>
+    <div className="max-w-md mx-auto bg-white shadow-lg rounded-lg p-6 text-center">
+      <Link
+        href="/"
+        className="text-blue-500 hover:underline mb-4 absolute left-4"
+      >
+        Back
+      </Link>
+      <h2 className="text-2xl font-bold text-gray-800 mb-4">User Profile</h2>
+      <div className="flex flex-col items-center space-y-4">
+        <div className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center text-4xl font-bold text-white">
+          🏆
+        </div>
+        <p className="text-lg font-semibold text-gray-700">
+          Rank: <span className="text-blue-500">Expert</span>
+        </p>
+        <p className="text-lg font-semibold text-gray-700">
+          Points: <span className="text-green-500">1200</span>
+        </p>
       </div>
     </div>
   );
