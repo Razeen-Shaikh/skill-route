@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React from "react";
 import ReactFlow, { Background, Controls, MiniMap } from "reactflow";
 import "reactflow/dist/style.css";
@@ -35,7 +36,15 @@ const edges = [
 const Roadmap: React.FC = () => {
   return (
     <div className="h-[100vh] w-full bg-white shadow-md rounded-lg p-4">
-      <h2 className="text-xl font-bold text-center mb-4">Roadmap</h2>
+      <div>
+        <Link
+          href="/"
+          className="text-blue-500 hover:underline mb-4 absolute left-4"
+        >
+          Back
+        </Link>
+        <h2 className="text-xl font-bold text-center mb-4">Roadmap</h2>
+      </div>
       <ReactFlow nodes={nodes} edges={edges} fitView>
         <Background />
         <Controls />
