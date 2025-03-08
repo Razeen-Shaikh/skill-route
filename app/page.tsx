@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+// import Quiz from "@/components/Quiz";
 
 const Home: React.FC = () => {
   return (
@@ -30,6 +31,7 @@ const Home: React.FC = () => {
         >
           My Profile
         </Link>
+        {/* <Quiz /> */}
       </div>
     </div>
   );
