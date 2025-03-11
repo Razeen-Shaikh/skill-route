@@ -31,7 +31,9 @@ const tutorials: Tutorial[] = [
   },
 ];
 
-const difficultyColors: { [key: string]: string } = {
+type Difficulty = 'Beginner' | 'Intermediate' | 'Advanced';
+
+const difficultyColors: Record<Difficulty, string> = {
   Beginner: "bg-green-500",
   Intermediate: "bg-yellow-500",
   Advanced: "bg-red-500",
