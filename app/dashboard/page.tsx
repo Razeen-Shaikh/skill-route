@@ -14,17 +14,20 @@ interface User {
   points: number;
   rank: number;
   previous_rank: number;
+  badges: string[];
+  achievements: string[];
 }
 
 const API_BASE_URL = "/api";
 
+//   TODO: Need to uncomment this
 // const fetchUserData = async () => {
 //   const { data } = await axios.get<User>(`${API_BASE_URL}/user`, {
 //     withCredentials: true,
 //   });
 //   return data;
 // };
-
+//   TODO: Need to uncomment this
 // const fetchPoints = async (userId: number) => {
 //   if (!userId) {
 //     return null;
@@ -36,7 +39,7 @@ const UserDashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [pointsData, setPointsData] = useState(null);
   const queryClient = useQueryClient();
-
+  //   TODO: Need to uncomment this
   //   const {
   //     data: user,
   //     isLoading: userLoading,
@@ -45,9 +48,9 @@ const UserDashboard = () => {
   //     queryKey: ["user"],
   //     queryFn: fetchUserData,
   //   });
-
+  //   TODO: Need to uncomment this
   //   const userId = useMemo(() => user?.id, [user]);
-
+  //   TODO: Need to uncomment this
   //   const {
   //     data: pointsData,
   //     isLoading: pointsLoading,
@@ -57,10 +60,10 @@ const UserDashboard = () => {
   //     queryFn: () => (userId ? fetchPoints(userId) : Promise.resolve(null)),
   //     enabled: !!userId,
   //   });
-
+  //   TODO: Need to uncomment this
   //   if (pointsLoading || userLoading)
   //     return <p className="text-center text-gray-600">Loading...</p>;
-
+  //   TODO: Need to uncomment this
   //   if (userError || pointsError)
   //     return <p className="text-center text-red-600">An error occurred!</p>;
 

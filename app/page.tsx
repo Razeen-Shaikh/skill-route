@@ -1,6 +1,5 @@
 import React from "react";
 import Link from "next/link";
-// import Quiz from "@/components/Quiz";
 
 const Home: React.FC = () => {
   return (
@@ -31,7 +30,12 @@ const Home: React.FC = () => {
         >
           My Profile
         </Link>
-        {/* <Quiz /> */}
+        <Link
+          href="/quiz"
+          className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+        >
+          Take a Quiz
+        </Link>
       </div>
     </div>
   );

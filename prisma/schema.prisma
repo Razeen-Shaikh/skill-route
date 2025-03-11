@@ -8,23 +8,65 @@ datasource db {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   name         String
-  email        String   @unique
+  email        String    @unique
   avatar       String?
-  points       Int      @default(0)
+  points       Int       @default(0)
   badges       String[]
   achievements String[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   Point        Point[]
+  Attempt      Attempt[]
+
+  @@map("users")
 }
 
 model Point {
-  id     Int      @id @default(autoincrement())
-  userId Int
-  points Int
-  date   DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  points    Int
+  reason    String
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+
+  @@map("points")
+}
+
+model Quiz {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  createdAt   DateTime   @default(now())
+  questions   Question[]
+  attempts    Attempt[]
+
+  @@map("quizzes")
+}
+
+model Question {
+  id      Int      @id @default(autoincrement())
+  quizId  Int
+  quiz    Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  text    String
+  options String[] // Store choices as an array
+  answer  String // Correct answer
+  points  Int      @default(1)
+
+  @@map("questions")
+}
+
+model Attempt {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizId    Int
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  score     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@map("attempts")
 }

@@ -23,9 +23,9 @@ import {
  * @param {object[]} props.data - An array of objects, each with a `date` and a `points` property.
  * @returns {ReactElement}
  */
-const ProgressChart: React.FC<{ data: { date: string; points: number }[] }> = ({
-  data,
-}) => {
+const ProgressChart: React.FC<{
+  data: { date: string; points: number }[] | null;
+}> = ({ data }) => {
   const [showMonth, setShowMonth] = useState(false);
 
   const toggleDateFormat = () => {
@@ -44,7 +44,7 @@ const ProgressChart: React.FC<{ data: { date: string; points: number }[] }> = ({
         Toggle Date/Month
       </button>
       <ResponsiveContainer width="100%" height={250}>
-        <LineChart data={data}>
+        <LineChart data={data || []}>
           <XAxis dataKey={showMonth ? "month" : "date"} />
           <YAxis />
           <Tooltip />
