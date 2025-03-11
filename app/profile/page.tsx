@@ -2,14 +2,21 @@ import React from "react";
 
 const Profile: React.FC = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-gray-100">
-      <div className="max-w-sm bg-white shadow-lg rounded-lg p-8 text-center">
-        <div className="w-24 h-24 bg-gray-300 rounded-full mx-auto"></div>
-        <h2 className="text-xl font-bold mt-4 text-gray-900">John Doe</h2>
-        <p className="text-gray-500">Software Developer</p>
-        <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          Edit Profile
-        </button>
+    <div className="max-w-sm mx-auto bg-white shadow-lg rounded-lg p-6 border border-gray-200 text-center h-full">
+      <h2 className="text-2xl font-bold text-blue-600 mb-2">👤 Profile</h2>
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center text-2xl font-bold text-gray-700">
+          U
+        </div>
+        <p className="text-lg font-semibold text-gray-800">Username</p>
+        <div className="w-full bg-gray-100 p-3 rounded-lg">
+          <p className="text-gray-600 text-sm">
+            🏆 Rank: <span className="font-bold text-blue-500">Gold</span>
+          </p>
+          <p className="text-gray-600 text-sm">
+            ⭐ Points: <span className="font-bold text-green-500">1200</span>
+          </p>
+        </div>
       </div>
     </div>
   );
