@@ -140,7 +140,11 @@ const Quiz: React.FC = () => {
                         : "bg-gray-100"
                       : "bg-gray-100 hover:bg-gray-200"
                   }`}
-                  onClick={() => handleOptionSelect(option)}
+                  onClick={() => {
+                    if (!selectedAnswer) {
+                      handleOptionSelect(option)
+                    }
+                  }}
                 >
                   {option}
                 </li>
