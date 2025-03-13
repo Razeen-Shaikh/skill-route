@@ -1,75 +1,45 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import Image from "next/image";
 import { Card } from "@/components/ui/card";
-import axios from "axios";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import ProgressChart from "@/components/ProgressChart";
-
-interface User {
-  id: number;
-  name: string;
-  avatar?: string;
-  points: number;
-  rank: number;
-  previous_rank: number;
-  badges: string[];
-  achievements: string[];
-}
-
-const API_BASE_URL = "/api";
-
-//   TODO: Need to uncomment this
-// const fetchUserData = async () => {
-//   const { data } = await axios.get<User>(`${API_BASE_URL}/user`, {
-//     withCredentials: true,
-//   });
-//   return data;
-// };
-//   TODO: Need to uncomment this
-// const fetchPoints = async (userId: number) => {
-//   if (!userId) {
-//     return null;
-//   }
-//   return await axios.get(`${API_BASE_URL}/points`);
-// };
+import { Button } from "@/components/ui/button";
+import { signOut } from "next-auth/react";
+import ProgressHeatmap from "@/components/ProgressHeatmap";
+import { useRouter } from "next/navigation";
+import { fetchUserData } from "@/lib/api";
 
 const UserDashboard = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [pointsData, setPointsData] = useState(null);
-  const queryClient = useQueryClient();
-  //   TODO: Need to uncomment this
-  //   const {
-  //     data: user,
-  //     isLoading: userLoading,
-  //     error: userError,
-  //   } = useQuery({
-  //     queryKey: ["user"],
-  //     queryFn: fetchUserData,
-  //   });
-  //   TODO: Need to uncomment this
-  //   const userId = useMemo(() => user?.id, [user]);
-  //   TODO: Need to uncomment this
-  //   const {
-  //     data: pointsData,
-  //     isLoading: pointsLoading,
-  //     error: pointsError,
-  //   } = useQuery({
-  //     queryKey: ["points", userId],
-  //     queryFn: () => (userId ? fetchPoints(userId) : Promise.resolve(null)),
-  //     enabled: !!userId,
-  //   });
-  //   TODO: Need to uncomment this
-  //   if (pointsLoading || userLoading)
-  //     return <p className="text-center text-gray-600">Loading...</p>;
-  //   TODO: Need to uncomment this
-  //   if (userError || pointsError)
-  //     return <p className="text-center text-red-600">An error occurred!</p>;
+  const router = useRouter();
+
+  const {
+    data: user,
+    isLoading: userLoading,
+    error: userError,
+  } = useQuery({
+    queryKey: ["user"],
+    queryFn: fetchUserData,
+  });
+
+  // TODO: Skeleton Loader
+  if (userLoading)
+    return <p className="text-center text-gray-600">Loading...</p>;
+
+  // TODO: Skeleton Error
+  if (userError)
+    return <p className="text-center text-red-600">An error occurred!</p>;
+
+  const handleLogOut = async () => {
+    await signOut();
+    router.push("/login");
+  };
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       <div className="max-w-4xl mx-auto">
+        {/* need to style */}
+        <Button onClick={() => handleLogOut()}>Logout</Button>
         {/* User Profile Card */}
         <Card className="flex items-center p-6 bg-white shadow-md rounded-lg mb-6">
           <Image
@@ -81,24 +51,29 @@ const UserDashboard = () => {
           />
           <div className="ml-4">
             <h2 className="text-xl font-semibold">{user?.name}</h2>
-            <p className="text-gray-500">Rank: #{user?.rank}</p>
+            <p className="text-gray-500">Rank: #{user?.stats?.rank ?? "N/A"}</p>
           </div>
         </Card>
-
         {/* Points & Rank Section */}
         <div className="grid grid-cols-2 gap-4">
           <Card className="p-4 bg-white shadow-md text-center">
             <h3 className="text-lg font-medium text-gray-700">Total Points</h3>
-            <p className="text-2xl font-bold text-blue-500">{user?.points}</p>
+            <p className="text-2xl font-bold text-blue-500">
+              {user?.stats?.points?.reduce(
+                (total, point) => total + point.points,
+                0
+              ) || 0}
+            </p>
           </Card>
           <Card className="p-4 bg-white shadow-md text-center">
             <h3 className="text-lg font-medium text-gray-700">
               Leaderboard Rank
             </h3>
-            <p className="text-2xl font-bold text-green-500">#{user?.rank}</p>
+            <p className="text-2xl font-bold text-green-500">
+              #{user?.stats?.rank ?? "N/A"}
+            </p>
           </Card>
         </div>
-
         {/* Badges */}
         <Card className="p-4 mt-6 bg-white shadow-md">
           <h3 className="text-lg font-semibold text-gray-700">🏅 Badges</h3>
@@ -117,7 +92,6 @@ const UserDashboard = () => {
             )}
           </div>
         </Card>
-
         {/* Achievements */}
         <Card className="p-4 mt-6 bg-white shadow-md">
           <h3 className="text-lg font-semibold text-gray-700">
@@ -138,7 +112,32 @@ const UserDashboard = () => {
 
         {/* Progress Chart */}
         <Card className="p-4 mt-6 bg-white shadow-md">
-          <ProgressChart data={pointsData} />
+          <h3 className="text-lg font-semibold text-gray-700">
+            📊 Your Progress
+          </h3>
+          <ProgressChart
+            data={
+              user?.stats?.points.map((point) => ({
+                ...point,
+                date: point.date.toISOString(),
+              })) ?? []
+            }
+          />
+        </Card>
+
+        {/* Progress HeatMap */}
+        <Card className="p-4 mt-6 bg-white shadow-md">
+          <h3 className="text-lg font-semibold text-gray-700">
+            🔥 Progress Heatmap
+          </h3>
+          <ProgressHeatmap
+            data={
+              user?.stats?.progress.map((progress) => ({
+                ...progress,
+                date: progress.date.toISOString(),
+              })) ?? []
+            }
+          />
         </Card>
 
         {/* Recent Activity */}

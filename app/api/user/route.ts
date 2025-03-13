@@ -1,19 +1,24 @@
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
 
-export async function GET(req: NextRequest) {
-    const session = await getServerSession(req);
-    if (!session || !session.user) {
+export async function GET() {
+    const session = await getServerSession(authOptions);
+    console.log("Session Data:", session);
+
+    if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = session.user.id as string;
 
     try {
         const user = await prisma.user.findUnique({
             where: { id: userId },
-            include: { badges: true, achievements: true },
+            include: {
+                stats: { include: { points: true, progress: true } }, attempts: true
+            },
         });
 
         if (!user) {
@@ -27,44 +32,33 @@ export async function GET(req: NextRequest) {
     }
 }
 
-export async function POST(req: NextRequest) {
-    const session = await getServerSession(req);
-    if (!session || !session.user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const userId = session.user.id;
-
-    try {
-        const user = await prisma.user.create({
-            data: {
-                ...await req.json(),
-                id: userId,
-            },
-        });
-
-        return NextResponse.json(user);
-    } catch (error) {
-        console.error("Error creating user:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-    }
-}
-
 export async function PUT(req: NextRequest) {
-    const session = await getServerSession(req);
-    if (!session || !session.user) {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const userId = session.user.id;
+    let body;
 
     try {
-        const user = await prisma.user.update({
+        body = await req.json();
+    } catch (error) {
+        return NextResponse.json({ error: "Invalid JSON format" }, { status: 400 });
+    }
+
+    // ✅ Secure Update: Only allow specific fields
+    const { name, avatar } = body;
+
+    try {
+        const updatedUser = await prisma.user.update({
             where: { id: userId },
-            data: await req.json(),
+            data: { name, avatar },
+            select: { id: true, name: true, avatar: true }, // ✅ Prevent leaking sensitive data
         });
 
-        return NextResponse.json(user);
+        return NextResponse.json(updatedUser);
     } catch (error) {
         console.error("Error updating user:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
@@ -72,8 +66,9 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-    const session = await getServerSession(req);
-    if (!session || !session.user) {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

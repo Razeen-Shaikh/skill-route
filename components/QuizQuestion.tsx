@@ -1,19 +1,12 @@
 "use client";
 
+import { Question } from "@/lib/interface";
 import { useState } from "react";
-
-interface Question {
-  id: number;
-  text: string;
-  options: string[];
-  answer: string;
-}
 
 interface QuizQuestionProps {
   question: Question;
   onNext: (isCorrect: boolean) => void;
 }
-
 
 const QuizQuestion: React.FC<QuizQuestionProps> = ({ question, onNext }) => {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
@@ -27,10 +20,10 @@ const QuizQuestion: React.FC<QuizQuestionProps> = ({ question, onNext }) => {
 
   const handleSubmit = () => {
     if (selectedOption) {
-      const isCorrect = selectedOption === question.answer;
+      const isCorrect = selectedOption === question?.answer;
       setSubmitted(true);
       setTimeout(() => {
-        onNext(isCorrect); // Move to next question
+        onNext(isCorrect);
         setSubmitted(false);
         setSelectedOption(null);
       }, 1000);
@@ -38,15 +31,15 @@ const QuizQuestion: React.FC<QuizQuestionProps> = ({ question, onNext }) => {
   };
 
   return (
-    <div className="max-w-lg p-6 bg-white rounded-lg shadow-lg">
-      <h2 className="text-xl font-semibold mb-4">{question.text}</h2>
+    <div className="md:min-w-[400px] p-6 bg-white rounded-lg shadow-lg">
+      <h2 className="text-xl font-semibold mb-4">{question?.text}</h2>
       <div className="space-y-2">
-        {question.options.map((option) => (
+        {question?.options.map((option) => (
           <button
             key={option}
-            className={`w-full p-3 text-left border rounded-lg ${
+            className={`w-full p-3 text-left border rounded-lg transition-colors ${
               submitted
-                ? option === question.answer
+                ? option === question?.answer
                   ? "bg-green-500 text-white"
                   : option === selectedOption
                   ? "bg-red-500 text-white"

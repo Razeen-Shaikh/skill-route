@@ -12,26 +12,53 @@ model User {
   name         String
   email        String    @unique
   avatar       String?
-  points       Int       @default(0)
   badges       String[]
   achievements String[]
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-  Point        Point[]
-  Attempt      Attempt[]
+  password     String
+  attempts     Attempt[]
+  stats        Stats?
 
   @@map("users")
 }
 
+model Stats {
+  id               Int        @id @default(autoincrement())
+  quizzesAttempted Int        @default(0)
+  bestScore        Int        @default(0)
+  coursesCompleted Int        @default(0)
+  streak           Int        @default(0)
+  lastActiveDate   DateTime   @default(now())
+  rank             Int        @default(0)
+  previous_rank    Int        @default(0)
+  userId           Int        @unique
+  points           Point[]
+  progress         Progress[]
+  user             User       @relation(fields: [userId], references: [id])
+
+  @@map("stats")
+}
+
+model Progress {
+  id      Int      @id @default(autoincrement())
+  date    DateTime @default(now())
+  count   Int      @default(0)
+  statsId Int
+  stats   Stats    @relation(fields: [statsId], references: [id])
+
+  @@unique([statsId, date])
+  @@map("progress")
+}
+
 model Point {
   id        Int      @id @default(autoincrement())
-  userId    Int
   points    Int
   reason    String
   date      DateTime @default(now())
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
+  statsId   Int
+  stats     Stats    @relation(fields: [statsId], references: [id])
 
   @@map("points")
 }
@@ -41,8 +68,8 @@ model Quiz {
   title       String
   description String?
   createdAt   DateTime   @default(now())
-  questions   Question[]
   attempts    Attempt[]
+  questions   Question[]
 
   @@map("quizzes")
 }
@@ -50,11 +77,11 @@ model Quiz {
 model Question {
   id      Int      @id @default(autoincrement())
   quizId  Int
-  quiz    Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
   text    String
-  options String[] // Store choices as an array
-  answer  String // Correct answer
+  options String[]
+  answer  String
   points  Int      @default(1)
+  quiz    Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
   @@map("questions")
 }
@@ -62,11 +89,11 @@ model Question {
 model Attempt {
   id        Int      @id @default(autoincrement())
   userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   quizId    Int
-  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
   score     Int      @default(0)
   createdAt DateTime @default(now())
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("attempts")
 }

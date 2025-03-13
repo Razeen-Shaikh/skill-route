@@ -31,10 +31,28 @@ const Home: React.FC = () => {
           My Profile
         </Link>
         <Link
-          href="/quiz"
+          href="/quiz/1"
           className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
         >
           Take a Quiz
+        </Link>
+        <Link
+          href="/dashboard"
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+        >
+          Dashboard
+        </Link>
+        <Link
+          href="/login"
+          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+        >
+          Login
+        </Link>
+        <Link
+          href="/register"
+          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+        >
+          Register
         </Link>
       </div>
     </div>
