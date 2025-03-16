@@ -29,7 +29,9 @@ const ProgressChart: React.FC<{
 }> = ({ data }) => {
   const [view, setView] = useState<"day" | "month" | "year">("day");
 
-  console.log({ data });
+  if (process.env.NODE_ENV === "development") {
+    console.log({ data });
+  }
 
   const toggleView = () => {
     setView((prev) =>
