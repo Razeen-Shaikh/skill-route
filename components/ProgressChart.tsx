@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { Button } from "@/components/ui/button";
 
 /**
  * A line chart that displays the user's progress over time.
@@ -23,29 +24,70 @@ import {
  * @param {object[]} props.data - An array of objects, each with a `date` and a `points` property.
  * @returns {ReactElement}
  */
-const ProgressChart: React.FC<{ data: { date: string; points: number }[] }> = ({
-  data,
-}) => {
-  const [showMonth, setShowMonth] = useState(false);
+const ProgressChart: React.FC<{
+  data: { date: string; points: number }[];
+}> = ({ data }) => {
+  const [view, setView] = useState<"day" | "month" | "year">("day");
 
-  const toggleDateFormat = () => {
-    setShowMonth(!showMonth);
+  if (process.env.NODE_ENV === "development") {
+    console.log({ data });
+  }
+
+  const toggleView = () => {
+    setView((prev) =>
+      prev === "day" ? "month" : prev === "month" ? "year" : "day"
+    );
+  };
+
+  const processData = (): { date: string; points: number }[] => {
+    if (!data) {
+      return [];
+    }
+
+    let formatter: Intl.DateTimeFormat;
+    const aggregatedData: Record<string, number> = {};
+
+    if (view === "month") {
+      formatter = new Intl.DateTimeFormat("en", {
+        month: "short",
+        year: "numeric",
+      });
+    } else if (view === "year") {
+      formatter = new Intl.DateTimeFormat("en", { year: "numeric" });
+    } else {
+      formatter = new Intl.DateTimeFormat("en", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    }
+
+    data.forEach(({ date, points }) => {
+      const key = formatter.format(new Date(date));
+
+      aggregatedData[key] = (aggregatedData[key] || 0) + points;
+    });
+
+    console.log({ data, aggregatedData });
+
+    return Object.entries(aggregatedData).map(([date, points]) => ({
+      date,
+      points,
+    }));
   };
 
   return (
-    <div className="p-4 bg-white shadow-md rounded-lg">
-      <h2 className="text-lg font-semibold text-gray-700 mb-4">
-        📊 Your Progress
-      </h2>
-      <button
-        onClick={toggleDateFormat}
-        className="mb-4 px-4 py-2 bg-blue-500 text-white rounded"
+    <div className="mb-6">
+      <Button
+        onClick={toggleView}
+        className="mb-4 px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 focus:ring-blue-500"
+        type="button"
       >
-        Toggle Date/Month
-      </button>
+        Toggle Day/Month/Year
+      </Button>
       <ResponsiveContainer width="100%" height={250}>
-        <LineChart data={data}>
-          <XAxis dataKey={showMonth ? "month" : "date"} />
+        <LineChart data={processData()}>
+          <XAxis dataKey={"date"} />
           <YAxis />
           <Tooltip />
           <Line
