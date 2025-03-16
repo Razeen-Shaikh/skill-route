@@ -2,8 +2,6 @@
 import { updateStreak } from "@/lib/api";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import StreakSkeleton from "./skeletons/streak";
 
@@ -28,7 +26,7 @@ export default function Streak({ userId }: { userId: number }) {
 
   useEffect(() => {
     mutate();
-  }, []);
+  }, [userId]);
 
   if (loading) {
     return <StreakSkeleton />;

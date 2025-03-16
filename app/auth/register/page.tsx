@@ -22,8 +22,12 @@ const Register = () => {
     onSuccess: () => {
       router.push("/auth/login");
     },
-    onError: (err: any) => {
-      setError(err.response?.data?.error || "Registration failed");
+    onError: (err: unknown) => {
+      if (axios.isAxiosError(err) && err.response) {
+        setError(err.response.data?.error || "Registration failed");
+      } else {
+        setError("Registration failed");
+      }
     },
   });
 

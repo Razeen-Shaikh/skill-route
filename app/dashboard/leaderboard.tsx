@@ -1,43 +1,37 @@
 "use client";
 import { fetchLeaderboard } from "@/lib/api";
-import { useMutation } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
 import LeaderboardSkeleton from "./skeletons/leaderboard";
+import { useQuery } from "@tanstack/react-query";
+import { User } from "@prisma/client";
 
 export default function Leaderboard() {
-  const [leaders, setLeaders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: leaders = [],
+    isLoading,
+    error,
+  } = useQuery({ queryKey: ["leaderboard"], queryFn: fetchLeaderboard });
 
-  const { mutate } = useMutation({
-    mutationFn: () => fetchLeaderboard(),
-    onSuccess: (data) => {
-      setLeaders(data);
-      setLoading(false);
-    },
-    onError: (error) => {
-      console.error("Error fetching badges:", error);
-      setLoading(false);
-    },
-  });
+  if (isLoading) return <LeaderboardSkeleton />;
 
-  useEffect(() => {
-    mutate();
-  }, []);
-
-  if (loading) return <LeaderboardSkeleton />;
+  if (error) {
+    console.error("Error fetching leaderboard:", error);
+    return <p>Error loading Leaderboard.</p>;
+  }
 
   return (
     <div className="p-4 bg-white shadow rounded-lg">
       <h3 className="text-xl font-semibold mb-4">🏆 Leaderboard</h3>
       <ul>
-        {leaders.map((user, index) => (
-          <li key={user.id} className="flex justify-between py-2 border-b">
-            <span>
-              #{index + 1} {user.username}
-            </span>
-            <span>{user.profile.points} pts</span>
-          </li>
-        ))}
+        {leaders.map(
+          (user: User & { profile: { points: number } }, index: number) => (
+            <li key={user.id} className="flex justify-between py-2 border-b">
+              <span>
+                #{index + 1} {user.username}
+              </span>
+              <span>{user.profile.points} pts</span>
+            </li>
+          )
+        )}
       </ul>
     </div>
   );

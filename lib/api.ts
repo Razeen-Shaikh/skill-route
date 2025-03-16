@@ -51,7 +51,7 @@ const updateProfile = async ({ userId, avatar, theme }: { userId: number, avatar
     return data;
 }
 
-const submitQuizAttempt = async ({ userId, quizId, attempts }: { userId: number, quizId: number, attempts: { questionId: number, selectedOption: number }[] }) => {
+const submitQuizAttempt = async ({ userId, quizId, attempts }: { userId: number, quizId: number, attempts: { questionId: number, selectedOption: string }[] }) => {
     const { data } = await axios.post<UserQuizAttempt>(`${API_BASE_URL}/quiz/submit`, { userId, quizId, attempts }, {
         withCredentials: true,
     });
