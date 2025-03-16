@@ -1,33 +1,33 @@
-import { hash } from "bcryptjs";
-import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
     try {
-        const { name, email, password } = await req.json();
+        const { username, email, password } = await req.json();
 
-        if (!name || !email || !password) {
-            return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-        }
-
+        // Check if user already exists
         const existingUser = await prisma.user.findUnique({ where: { email } });
-
         if (existingUser) {
             return NextResponse.json({ error: "User already exists" }, { status: 400 });
         }
 
-        const hashedPassword = await hash(password, 10);
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-        const newUser = await prisma.user.create({
+        // Create new user
+        await prisma.user.create({
             data: {
-                name,
+                username,
                 email,
-                password: hashedPassword,
+                passwordHash: hashedPassword,
+                profile: { create: {} },
+                coinWallet: { create: {} },
             },
         });
 
-        return NextResponse.json(newUser);
+        return NextResponse.json({ message: "User registered successfully!" });
     } catch (error) {
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json({ error: "Failed to register user" }, { status: 500 });
     }
 }

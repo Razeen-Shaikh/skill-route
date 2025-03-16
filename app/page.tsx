@@ -1,62 +1,71 @@
-import React from "react";
 import Link from "next/link";
 
-const Home: React.FC = () => {
+export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6">
-      <h1 className="text-3xl font-bold text-gray-800">
-        Welcome to Your Learning Hub! 🚀
-      </h1>
-      <p className="text-gray-600 mt-4">
-        Explore tutorials, track your roadmap, and grow your skills.
-      </p>
+    <div className="min-h-screen flex flex-col items-center bg-gray-100">
+      {/* Hero Section */}
+      <section className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-16 text-center">
+        <div className="max-w-3xl mx-auto">
+          <h1 className="text-4xl font-bold mb-4">
+            Master Problem-Solving with Interactive Quizzes
+          </h1>
+          <p className="text-lg">
+            Enhance your coding skills with real-world challenges, track
+            progress, and climb the leaderboard!
+          </p>
+          <div className="mt-6">
+            <Link href="/auth/register">
+              <button className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200">
+                Get Started
+              </button>
+            </Link>
+          </div>
+        </div>
+      </section>
 
-      <div className="mt-6 space-x-4">
-        <Link
-          href="/roadmap"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          View Roadmap
-        </Link>
-        <Link
-          href="/tutorial-list"
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-        >
-          Tutorials
-        </Link>
-        <Link
-          href="/profile"
-          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-        >
-          My Profile
-        </Link>
-        <Link
-          href="/quiz/1"
-          className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
-        >
-          Take a Quiz
-        </Link>
-        <Link
-          href="/dashboard"
-          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-        >
-          Dashboard
-        </Link>
-        <Link
-          href="/login"
-          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-        >
-          Login
-        </Link>
-        <Link
-          href="/register"
-          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-        >
-          Register
-        </Link>
-      </div>
+      {/* Features Section */}
+      <section className="max-w-5xl mx-auto py-12 px-6">
+        <h2 className="text-2xl font-bold text-center mb-6">Why Choose Us?</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Feature 1 */}
+          <div className="p-6 bg-white shadow-md rounded-lg text-center">
+            <h3 className="text-xl font-semibold mb-2">Timed Quizzes</h3>
+            <p className="text-gray-600">
+              Test your speed and accuracy with time-based coding challenges.
+            </p>
+          </div>
+
+          {/* Feature 2 */}
+          <div className="p-6 bg-white shadow-md rounded-lg text-center">
+            <h3 className="text-xl font-semibold mb-2">Leaderboard System</h3>
+            <p className="text-gray-600">
+              Compete with others and track your ranking based on points.
+            </p>
+          </div>
+
+          {/* Feature 3 */}
+          <div className="p-6 bg-white shadow-md rounded-lg text-center">
+            <h3 className="text-xl font-semibold mb-2">Earn Coins & Rewards</h3>
+            <p className="text-gray-600">
+              Complete challenges and unlock achievements with our reward
+              system.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Call-to-Action */}
+      <section className="w-full bg-blue-600 text-white py-12 text-center">
+        <h2 className="text-2xl font-bold mb-4">Start Your Journey Today!</h2>
+        <p>Sign up now and take your skills to the next level.</p>
+        <div className="mt-6">
+          <Link href="/auth/register">
+            <button className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200">
+              Sign Up Now
+            </button>
+          </Link>
+        </div>
+      </section>
     </div>
   );
-};
-
-export default Home;
+}

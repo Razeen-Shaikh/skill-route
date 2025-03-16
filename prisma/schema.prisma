@@ -8,92 +8,220 @@ datasource db {
 }
 
 model User {
-  id           Int       @id @default(autoincrement())
-  name         String
-  email        String    @unique
-  avatar       String?
-  badges       String[]
-  achievements String[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  password     String
-  attempts     Attempt[]
-  stats        Stats?
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profile      UserProfile?
+  progress     UserProgress[]
+  quizAttempts UserQuizAttempt[]
+  transactions CoinTransaction[]
+  badges       UserBadge[]
+  streaks      UserStreak?
 
   @@map("users")
 }
 
-model Stats {
-  id               Int        @id @default(autoincrement())
-  quizzesAttempted Int        @default(0)
-  bestScore        Int        @default(0)
-  coursesCompleted Int        @default(0)
-  streak           Int        @default(0)
-  lastActiveDate   DateTime   @default(now())
-  rank             Int        @default(0)
-  previous_rank    Int        @default(0)
-  userId           Int        @unique
-  points           Point[]
-  progress         Progress[]
-  user             User       @relation(fields: [userId], references: [id])
+model UserProfile {
+  userId      Int        @id @map("user_id")
+  rank        Int        @default(1)
+  points      Int        @default(0)
+  coinsEarned Int        @default(0)
+  coinsSpent  Int        @default(0)
+  theme       ThemeName? @default(DEFAULT) // Fixed enum default
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
-  @@map("stats")
+  user         User              @relation(fields: [userId], references: [id])
+  transactions CoinTransaction[]
+  Theme        Theme[]
+
+  @@map("users_profile")
 }
 
-model Progress {
-  id      Int      @id @default(autoincrement())
-  date    DateTime @default(now())
-  count   Int      @default(0)
-  statsId Int
-  stats   Stats    @relation(fields: [statsId], references: [id])
+model Tutorial {
+  id Int @id @default(autoincrement())
 
-  @@unique([statsId, date])
-  @@map("progress")
-}
+  title        String
+  description  String?
+  content      String
+  isLocked     Boolean  @default(true)
+  unlockPoints Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-model Point {
-  id        Int      @id @default(autoincrement())
-  points    Int
-  reason    String
-  date      DateTime @default(now())
-  createdAt DateTime @default(now())
-  statsId   Int
-  stats     Stats    @relation(fields: [statsId], references: [id])
+  quizzes  Quiz[]
+  progress UserProgress[]
 
-  @@map("points")
+  @@map("tutorials")
 }
 
 model Quiz {
-  id          Int        @id @default(autoincrement())
-  title       String
-  description String?
-  createdAt   DateTime   @default(now())
-  attempts    Attempt[]
-  questions   Question[]
+  id        Int      @id @default(autoincrement())
+  title     String
+  isTimed   Boolean  @default(false)
+  timeLimit Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  questions           QuizQuestion[]
+  attempts            UserQuizAttempt[]
+  Tutorial            Tutorial?             @relation(fields: [tutorialId], references: [id])
+  tutorialId          Int?
+  questionAttempts UserQuestionAttempt[]
 
   @@map("quizzes")
 }
 
-model Question {
-  id      Int      @id @default(autoincrement())
-  quizId  Int
-  text    String
-  options String[]
-  answer  String
-  points  Int      @default(1)
-  quiz    Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+model QuizQuestion {
+  id            Int      @id @default(autoincrement())
+  quizId        Int
+  questionText  String
+  options       String[] // Array of options (e.g., ["A", "B", "C", "D"])
+  correctAnswer String   @default("") // Store correct answer as a string (e.g., "A")
 
-  @@map("questions")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_questions")
 }
 
-model Attempt {
+model UserProgress {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  tutorialId  Int
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id])
+  tutorial Tutorial @relation(fields: [tutorialId], references: [id])
+
+  @@unique([userId, tutorialId])
+  @@map("users_progress")
+}
+
+model UserQuizAttempt {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  quizId      Int
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  score       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+  quiz Quiz @relation(fields: [quizId], references: [id])
+
+  questionAttempts UserQuestionAttempt[]
+
+  @@index([userId])
+  @@index([quizId])
+  @@map("user_quiz_attempts")
+}
+
+model UserQuestionAttempt {
+  id                Int      @id @default(autoincrement())
+  userQuizAttemptId Int
+  questionId        Int
+  selectedOption    String
+  isCorrect         Boolean
+  pointsEarned      Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  quizAttempts UserQuizAttempt @relation(fields: [userQuizAttemptId], references: [id])
+  Quiz         Quiz?           @relation(fields: [quizId], references: [id])
+  quizId       Int?
+
+  @@map("user_question_attempts")
+}
+
+model CoinTransaction {
+  id            Int             @id @default(autoincrement())
+  userProfileId Int
+  type          TransactionType
+  amount        Int
+  description   String
+  transactionAt DateTime        @default(now())
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  userProfile UserProfile @relation(fields: [userProfileId], references: [userId])
+  user        User?       @relation(fields: [userId], references: [id])
+  userId      Int?
+
+  @@map("coins_transactions")
+}
+
+model Badge {
+  id        Int      @id @default(autoincrement())
+  name      String
+  imageUrl  String
+  pointsReq Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  badges UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
   id        Int      @id @default(autoincrement())
   userId    Int
-  quizId    Int
-  score     Int      @default(0)
+  badgeId   Int
+  earnedAt  DateTime @default(now())
   createdAt DateTime @default(now())
-  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt DateTime @updatedAt
 
-  @@map("attempts")
+  user  User  @relation(fields: [userId], references: [id])
+  badge Badge @relation(fields: [badgeId], references: [id])
+
+  @@unique([userId, badgeId])
+  @@map("users_badges")
+}
+
+model UserStreak {
+  userId      Int       @id @map("user_id")
+  streakCount Int       @default(0)
+  lastLogin   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("users_streaks")
+}
+
+model Theme {
+  id            Int      @id @default(autoincrement())
+  userProfileId Int
+  name          String   @default("Default")
+  description   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  userProfile UserProfile @relation(fields: [userProfileId], references: [userId])
+
+  @@map("themes")
+}
+
+enum TransactionType {
+  EARNED
+  SPENT
+}
+
+enum ThemeName {
+  DEFAULT
+  DARK
+  LIGHT
 }

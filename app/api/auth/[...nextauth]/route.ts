@@ -1,14 +1,14 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "@/lib/prisma";
-import { compare } from "bcryptjs";
+import bcrypt from "bcryptjs";
 
-export const authOptions = {
+const authOptions = {
     providers: [
         CredentialsProvider({
             name: "Credentials",
             credentials: {
-                email: { label: "Email", type: "email", placeholder: "example@example.com" },
+                email: { label: "Email", type: "text" },
                 password: { label: "Password", type: "password" },
             },
             async authorize(credentials) {
@@ -16,40 +16,41 @@ export const authOptions = {
                     throw new Error("Missing email or password");
                 }
 
-                const user = await prisma.user.findUnique({ where: { email: credentials.email } });
+                const user = await prisma.user.findUnique({
+                    where: { email: credentials.email },
+                });
 
                 if (!user) {
-                    throw new Error("No user found");
+                    throw new Error("User not found");
                 }
 
-                const passwordMatch = await compare(credentials.password, user.password);
+                const passwordMatch = await bcrypt.compare(
+                    credentials.password,
+                    user.passwordHash
+                );
+
                 if (!passwordMatch) {
-                    throw new Error("Incorrect password");
+                    throw new Error("Invalid password");
                 }
 
-                return { id: user.id, name: user.name, email: user.email };
+                return { id: user.id.toString(), email: user.email, name: user.username };
             },
         }),
     ],
-    pages: {
-        signIn: "/login",
-    },
     callbacks: {
-        async session({ session, user, token }) {
+        async session({ session, token }: { session: any, token: any }) {
             if (token) {
-                session.user.id = token.id; // Ensure `id` is set
+                session.user.id = token.sub;
             }
             return session;
         },
-        async jwt({ token, user }) {
-            if (user) {
-                token.id = user.id; // Ensure `id` is included in token
-            }
-            return token;
-        },
     },
     session: {
-        strategy: "jwt",
+        strategy: "jwt" as const,
+    },
+    secret: process.env.NEXTAUTH_SECRET,
+    pages: {
+        signIn: "/auth/login",
     },
 };
 
