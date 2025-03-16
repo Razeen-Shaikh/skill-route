@@ -4,15 +4,16 @@ import Link from "next/link";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
-import { Button } from "./ui/button";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { data: session } = useSession();
+  const router = useRouter();
 
   const logOut = () => {
     signOut();
-    window.location.href = "/";
+    router.push("/");
   };
 
   return (
