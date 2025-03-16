@@ -11,9 +11,11 @@ import { fetchDashboardData } from "@/lib/api";
 import DashboardSkeleton from "./skeletons/dashboard";
 import Leaderboard from "./leaderboard";
 import ProfileCard from "./profile";
+import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
   const { data: session } = useSession();
+  const router = useRouter();
 
   const email = useMemo(() => session?.user?.email, [session]);
 
@@ -48,14 +50,20 @@ export default function Dashboard() {
         <div className="text-center p-6 bg-white shadow-lg rounded-lg">
           <h2 className="text-2xl font-bold text-red-500">Access Denied</h2>
           <p>Please log in to view the dashboard.</p>
+          <button
+            className="mt-4 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+            onClick={() => router.push("/auth/login")}
+          >
+            Login
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 bg-white">
-      <h2 className="text-3xl font-bold text-center text-gray-800">
+    <div className="max-w-6xl mx-auto p-6">
+      <h2 className="text-3xl font-bold text-center">
         Welcome, {user?.username} 👋
       </h2>
 
@@ -67,10 +75,8 @@ export default function Dashboard() {
 
       {/* Progress & Achievements */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-        <div className="p-6 bg-gray-100 rounded-lg shadow">
-          <h3 className="text-xl font-semibold text-gray-700">
-            Tutorial Progress
-          </h3>
+        <div className="p-6 rounded-lg shadow-md dark:bg-gray-900">
+          <h3 className="text-xl font-semibold">Tutorial Progress</h3>
           {user?.progress?.length > 0 ? (
             user.progress.map(
               (prog: {
@@ -100,10 +106,8 @@ export default function Dashboard() {
       {/* Daily Rewards & Transactions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
         <DailyRewards userId={userId} />
-        <div className="p-6 bg-gray-100 rounded-lg shadow">
-          <h3 className="text-xl font-semibold text-gray-700">
-            Coin Transactions
-          </h3>
+        <div className="p-6 rounded-lg shadow-md dark:bg-gray-900">
+          <h3 className="text-xl font-semibold">Coin Transactions</h3>
           {user?.transactions.length > 0 ? (
             user.transactions.map(
               (txn: { id: string; description: string; amount: number }) => (

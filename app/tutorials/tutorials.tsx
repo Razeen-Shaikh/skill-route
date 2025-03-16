@@ -7,7 +7,6 @@ import { Tutorial } from "@prisma/client";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import Skeleton from "./skeleton";
 
 export default function Tutorials() {
   const { data: session } = useSession();
@@ -36,7 +35,13 @@ export default function Tutorials() {
   }
 
   if (tutorialsLoading) {
-    return <Skeleton />;
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center p-6 bg-white shadow-lg rounded-lg">
+          <p>Loading tutorials...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

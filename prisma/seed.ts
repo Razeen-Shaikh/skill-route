@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 const hashPassword = async (password: string) => await bcrypt.hash(password, 10);
-const themeOptions: ThemeName[] = ['DEFAULT', 'LIGHT', 'DARK']; // Define valid themes
+const themeOptions: ThemeName[] = ['LIGHT', 'DARK'];
 const getRandomDate = (start: Date, end: Date) => new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
 const getRandomBool = () => Math.random() < 0.5;
 let selected: { [key: string]: string } = {};
@@ -180,6 +180,13 @@ async function main() {
             { quizId: quizRecords[13].id, questionText: "Which technique improves SEO?", options: ["Semantic HTML", "Large images", "Excessive JavaScript", "Using only tables"], correctAnswer: "Semantic HTML" },
             { quizId: quizRecords[13].id, questionText: "Why should you avoid inline CSS?", options: ["Reduces maintainability", "Makes CSS easier", "Improves speed", "No impact"], correctAnswer: "Reduces maintainability" },
             { quizId: quizRecords[13].id, questionText: "Which unit is recommended for responsive design?", options: ["em", "px", "cm", "mm"], correctAnswer: "em" },
+
+            // 📌 15. Best Practices
+            { quizId: quizRecords[14].id, questionText: "What is the recommended file size for images?", options: ["100KB", "200KB", "500KB", "1MB"], correctAnswer: "1MB" },
+            { quizId: quizRecords[14].id, questionText: "Which color contrast ratio is recommended for accessibility?", options: ["4.5:1", "3:1", "6:1", "2:1"], correctAnswer: "4.5:1" },
+            { quizId: quizRecords[14].id, questionText: "What is the recommended file size for images?", options: ["100KB", "200KB", "500KB", "1MB"], correctAnswer: "1MB" },
+            { quizId: quizRecords[14].id, questionText: "What is the recommended file size for images?", options: ["100KB", "200KB", "500KB", "1MB"], correctAnswer: "1MB" },
+            { quizId: quizRecords[14].id, questionText: "What is the recommended file size for images?", options: ["100KB", "200KB", "500KB", "1MB"], correctAnswer: "1MB" },
 
         ],
     });

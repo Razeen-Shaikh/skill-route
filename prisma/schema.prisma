@@ -32,7 +32,7 @@ model UserProfile {
   points      Int        @default(0)
   coinsEarned Int        @default(0)
   coinsSpent  Int        @default(0)
-  theme       ThemeName? @default(DEFAULT) // Fixed enum default
+  theme       ThemeName? @default(LIGHT)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -68,10 +68,10 @@ model Quiz {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  questions           QuizQuestion[]
-  attempts            UserQuizAttempt[]
-  Tutorial            Tutorial?             @relation(fields: [tutorialId], references: [id])
-  tutorialId          Int?
+  questions        QuizQuestion[]
+  attempts         UserQuizAttempt[]
+  Tutorial         Tutorial?             @relation(fields: [tutorialId], references: [id])
+  tutorialId       Int?
   questionAttempts UserQuestionAttempt[]
 
   @@map("quizzes")
@@ -221,7 +221,6 @@ enum TransactionType {
 }
 
 enum ThemeName {
-  DEFAULT
   DARK
   LIGHT
 }

@@ -26,26 +26,30 @@ export default function Streak({ userId }: { userId: number }) {
 
   useEffect(() => {
     mutate();
-  }, [userId]);
+  }, [mutate, userId]);
 
   if (loading) {
     return <StreakSkeleton />;
   }
 
   return (
-    <div className="p-6 bg-white shadow-lg rounded-lg flex flex-col items-center justify-center">
-      <h3 className="text-2xl font-semibold text-gray-800 flex items-center gap-2">
+    <div className="p-6 shadow-md dark:bg-gray-900 rounded-lg flex flex-col items-center justify-center">
+      <h3 className="text-2xl font-semibold flex items-center gap-2">
         🔥 Streak
       </h3>
       <p
         className={cn(
           "text-3xl font-bold",
-          streak && streak > 5 ? "text-green-600" : "text-gray-800"
+          streak && streak > 5
+            ? "text-green-600"
+            : streak === 0
+            ? "text-red-600"
+            : "text-gray-800"
         )}
       >
         {streak} {streak === 1 ? "Day" : "Days"}
       </p>
-      <p className="text-sm text-gray-500 mt-2">{message}</p>
+      <p className="text-sm mt-2">{message}</p>
     </div>
   );
 }

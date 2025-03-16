@@ -1,7 +1,8 @@
-import NextAuth from "next-auth";
+import NextAuth, { Session } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { JWT } from "next-auth/jwt";
 
 const authOptions = {
     providers: [
@@ -18,6 +19,7 @@ const authOptions = {
 
                 const user = await prisma.user.findUnique({
                     where: { email: credentials.email },
+                    include: { profile: true },
                 });
 
                 if (!user) {
@@ -33,15 +35,22 @@ const authOptions = {
                     throw new Error("Invalid password");
                 }
 
-                return { id: user.id.toString(), email: user.email, name: user.username };
+                return {
+                    id: user.id.toString(),
+                    email: user.email,
+                    name: user.username,
+                    avatarUrl: user.avatarUrl,
+                    theme: user.profile ? user.profile.theme : null
+                };
             },
         }),
     ],
     callbacks: {
-        async session({ session, token }: { session: any, token: any }) {
-            if (token) {
+        async session({ session, token }: { session: Session, token: JWT }) {
+            if (token && session.user) {
                 session.user.id = token.sub;
             }
+
             return session;
         },
     },

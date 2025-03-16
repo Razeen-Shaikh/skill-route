@@ -21,7 +21,7 @@ export default function ProfileUpdate({ userId }: { userId: number }) {
     },
   });
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     await mutate();
@@ -32,7 +32,7 @@ export default function ProfileUpdate({ userId }: { userId: number }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="p-4 bg-white shadow rounded-lg space-y-4"
+      className="p-4 dark:bg-gray-900 shadow-md rounded-lg space-y-4"
     >
       <h3 className="text-xl font-semibold">📝 Update Profile</h3>
       <div>

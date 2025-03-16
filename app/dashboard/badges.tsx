@@ -14,7 +14,7 @@ export default function Badges({ userId }: { userId: number }) {
   if (badgesLoading) return <BadgesSkeleton />;
 
   return (
-    <div className="p-4 bg-white shadow rounded-lg">
+    <div className="p-4 shadow-md dark:bg-gray-900 rounded-lg">
       <h3 className="text-xl font-semibold">🏅 Achievements</h3>
       <div className="flex gap-2 mt-4">
         {badges.length > 0 ? (

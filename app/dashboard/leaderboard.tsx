@@ -19,7 +19,7 @@ export default function Leaderboard() {
   }
 
   return (
-    <div className="p-4 bg-white shadow rounded-lg">
+    <div className="p-4 shadow-md dark:bg-gray-900 rounded-lg">
       <h3 className="text-xl font-semibold mb-4">🏆 Leaderboard</h3>
       <ul>
         {leaders.map(

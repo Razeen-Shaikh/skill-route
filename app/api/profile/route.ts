@@ -7,7 +7,7 @@ export async function PUT(req: Request) {
 
         const updatedUser = await prisma.userProfile.update({
             where: { userId },
-            data: { theme: { update: { name: theme } }, user: { update: { avatarUrl } } },
+            data: { theme, user: { update: { avatarUrl } } },
             include: { user: true },
         });
 
