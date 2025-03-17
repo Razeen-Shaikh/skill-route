@@ -17,7 +17,7 @@ export default function Dashboard() {
   const { data: session } = useSession();
   const router = useRouter();
 
-  const email = useMemo(() => session?.user?.email, [session]);
+  const email = session?.user?.email ?? null;
 
   const {
     data: user,
@@ -40,11 +40,11 @@ export default function Dashboard() {
     );
   }
 
-  if (userLoading || !user) {
+  if (userLoading) {
     return <DashboardSkeleton />;
   }
 
-  if (!session) {
+  if (!session || !user || !email) {
     return (
       <div className="flex h-screen items-center justify-center bg-red-100">
         <div className="text-center p-6 bg-white shadow-lg rounded-lg">
