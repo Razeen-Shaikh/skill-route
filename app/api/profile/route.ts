@@ -7,12 +7,12 @@ export async function PUT(req: Request) {
 
         const updatedUser = await prisma.userProfile.update({
             where: { userId },
-            data: { theme: { update: { name: theme } }, user: { update: { avatarUrl } } },
+            data: { theme, user: { update: { avatarUrl } } },
             include: { user: true },
         });
 
         return NextResponse.json(updatedUser);
-    } catch (error) {
+    } catch {
         return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
     }
 }

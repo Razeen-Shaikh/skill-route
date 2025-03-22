@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { TransactionType } from "@prisma/client";
 
 export async function POST(req: Request) {
     try {
@@ -14,16 +15,27 @@ export async function POST(req: Request) {
         }
 
         // Reward based on streak
-        let reward = Math.min(50, streak.streakCount * 5);
+        const reward = Math.min(50, streak.streakCount * 5);
 
-        await prisma.userProfile.update({
+        const userProfile = await prisma.userProfile.update({
             where: { userId },
-            data: { coinsEarned: { increment: reward } }
+            data: { coins: { increment: reward } }
         });
+
+        await prisma.coinTransaction.create({
+            data: {
+                userProfileId: userProfile.userId,
+                amount: reward,
+                description: "Streak reward",
+                type: TransactionType.EARNED,
+            },
+        })
+
+
 
         return NextResponse.json({ reward, message: `You earned ${reward} coins!` });
 
-    } catch (error) {
+    } catch {
         return NextResponse.json({ error: "Failed to give reward" }, { status: 500 });
     }
 }

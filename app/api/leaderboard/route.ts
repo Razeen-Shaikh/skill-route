@@ -4,17 +4,21 @@ import prisma from "@/lib/prisma";
 export async function GET() {
     try {
         const topUsers = await prisma.user.findMany({
-            orderBy: { profile: { points: "desc" } },
+            orderBy: { profile: { rank: "asc" } },
             take: 10,
-            select: {
-                id: true,
-                username: true,
-                profile: { select: { points: true, rank: true } },
+            include: {
+                profile: {
+                    select: {
+                        rank: true,
+                        points: true,
+                        coins: true
+                    },
+                },
             },
         });
 
         return NextResponse.json(topUsers);
-    } catch (error) {
+    } catch {
         return NextResponse.json({ error: "Failed to fetch leaderboard" }, { status: 500 });
     }
 }

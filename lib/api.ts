@@ -1,72 +1,69 @@
 import axios from "axios";
-import { Quiz, User } from "./interface";
-import { UserQuizAttempt } from "@prisma/client";
+import { Quiz, Tutorial, User, UserBadge, UserProgress, UserQuizAttempt } from "./interface";
 
 const API_BASE_URL = "/api";
 
-const fetchUserData = async () => {
-    const { data } = await axios.get<User>(`${API_BASE_URL}/user`, {
-        withCredentials: true,
-    });
-    return data;
+const api = axios.create({
+    baseURL: API_BASE_URL,
+    withCredentials: true,
+});
+
+// Generic fetch function with error handling
+const fetchData = async <T>(url: string, params?: object) => {
+    try {
+        const { data } = await api.get<T>(url, { params });
+        return data;
+    } catch (error) {
+        console.error(`Error fetching data from ${url}:`, error);
+        throw new Error("Failed to fetch data");
+    }
 };
 
-const fetchTutorials = async () => {
-    const { data } = await axios.get(`${API_BASE_URL}/tutorials`);
-    return data;
-}
+const postData = async <T>(url: string, body: object) => {
+    try {
+        const { data } = await api.post<T>(url, body);
+        return data;
+    } catch (error) {
+        console.error(`Error posting data to ${url}:`, error);
+        throw new Error("Failed to submit data");
+    }
+};
 
-const fetchTutorial = async (id: string) => {
-    const { data } = await axios.get(`${API_BASE_URL}/tutorials/${id}`);
-    return data;
-}
+const putData = async <T>(url: string, body: object) => {
+    try {
+        const { data } = await api.put<T>(url, body);
+        return data;
+    } catch (error) {
+        console.error(`Error updating data at ${url}:`, error);
+        throw new Error("Failed to update data");
+    }
+};
 
-const fetchQuiz = async (id: string) => {
-    const { data } = await axios.get<Quiz>(`${API_BASE_URL}/quizzes/${id}`);
-    return data;
-}
+// Fetch functions
+const fetchUserData = () => fetchData<User>("/user");
+const fetchTutorials = () => fetchData<Tutorial[]>("/tutorials");
+const fetchTutorial = (id: number) => fetchData<Tutorial>(`/tutorials/${id}`);
+const fetchQuiz = (id: number) => fetchData<Quiz>(`/quizzes/${id}`);
+const fetchUserProgress = (userId: number, tutorialId: number) => fetchData<UserProgress>(`/tutorials/progress`, { userId, tutorialId });
+const fetchDashboardData = (email: string) => fetchData<User>(`/dashboard`, { email });
+const fetchBadges = (userId: number) => fetchData<UserBadge[]>(`/badges`, { userId });
+const fetchLeaderboard = () => fetchData<User[]>(`/leaderboard`);
+const fetchTheme = (userId: number) => fetchData(`/profile/theme`, { userId });
+const fetchUserCoins = (userId: number) => fetchData<{ coins: number }>(`/profile/coins`, { userId });
 
-const fetchUserProgress = async (userId: string, tutorialId: string) => {
-    const { data } = await axios.get(`${API_BASE_URL}/progress/?userId=${userId}&tutorialId=${tutorialId}`);
-    return data;
-}
+const fetchTransactions = async ({ page, limit, filter }: { page: number; limit: number; filter: string }) => {
+    return fetchData(`/transactions`, { page, limit, filter: filter !== "ALL" ? filter : undefined });
+};
 
-const fetchDashboardData = async (email: string) => {
-    const { data } = await axios.get(`${API_BASE_URL}/dashboard?email=${email}`);
-    return data;
-}
+const fetchQuizAttempts = (quizIds: number[]) => fetchData<{ quizId: number }[]>(`/quiz/attempts`, { quizIds: quizIds.join(",") });
 
-const fetchBadges = async (userId: number) => {
-    const { data } = await axios.get(`${API_BASE_URL}/badges?userId=${userId}`);
-    return data;
-}
-
-const fetchLeaderboard = async () => {
-    const { data } = await axios.get(`${API_BASE_URL}/leaderboard`);
-    return data;
-}
-
-const updateProfile = async ({ userId, avatar, theme }: { userId: number, avatar: string, theme: string }) => {
-    const { data } = await axios.put(`${API_BASE_URL}/profile`, { userId, avatarUrl: avatar, theme });
-    return data;
-}
-
-const submitQuizAttempt = async ({ userId, quizId, attempts }: { userId: number, quizId: number, attempts: { questionId: number, selectedOption: string }[] }) => {
-    const { data } = await axios.post<UserQuizAttempt>(`${API_BASE_URL}/quiz/submit`, { userId, quizId, attempts }, {
-        withCredentials: true,
-    });
-    return data;
-}
-
-const updateRewards = async (userId: number) => {
-    const { data } = await axios.post(`${API_BASE_URL}/rewards`, { userId });
-    return data;
-}
-
-const updateStreak = async (userId: number) => {
-    const { data } = await axios.post(`${API_BASE_URL}/streak`, { userId });
-    return data;
-}
+// Update functions
+const updateProfile = (userId: number, avatar: string, theme: string) => putData(`/profile`, { userId, avatarUrl: avatar, theme });
+const submitQuizAttempt = (userId: number, quizId: number, attempts: { questionId: number; selectedOption: string }[]) => postData<UserQuizAttempt>(`/quiz/submit`, { userId, quizId, attempts });
+const updateRewards = (userId: number) => postData(`/rewards`, { userId });
+const updateStreak = (userId: number) => postData(`/streak`, { userId });
+const updateTheme = (userId: number, newTheme: string) => putData(`/profile/theme`, { userId, theme: newTheme });
+const updateProgress = (userId: number, tutorialId: number, percentageCompleted: number) => putData(`/tutorials/progress`, { userId, tutorialId, percentageCompleted });
 
 export {
     fetchUserData,
@@ -77,8 +74,14 @@ export {
     fetchDashboardData,
     fetchBadges,
     fetchLeaderboard,
+    fetchTheme,
+    fetchUserCoins,
+    fetchTransactions,
+    fetchQuizAttempts,
     updateProfile,
     submitQuizAttempt,
     updateRewards,
-    updateStreak
+    updateStreak,
+    updateTheme,
+    updateProgress,
 };

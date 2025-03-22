@@ -1,13 +1,7 @@
-import React from "react";
-import Tutorials from "./tutorials";
-
-const TutorialsPage = () => {
+export default function TutorialsPage() {
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Tutorials</h1>
-      <Tutorials />{" "}
+    <div className="p-6 h-screen">
+      <p className="text-muted-foreground">Select a tutorial from the left.</p>
     </div>
   );
-};
-
-export default TutorialsPage;
+}

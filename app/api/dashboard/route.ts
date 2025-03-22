@@ -13,7 +13,11 @@ export async function GET(req: Request) {
         const user = await prisma.user.findUnique({
             where: { email: emailParam },
             include: {
-                profile: true,
+                profile: {
+                    include: {
+                        transactions: true,
+                    }
+                },
                 progress: {
                     include: {
                         tutorial: true,
@@ -24,7 +28,6 @@ export async function GET(req: Request) {
                         quiz: true,
                     },
                 },
-                transactions: true,
                 badges: {
                     include: {
                         badge: true,
