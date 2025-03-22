@@ -1,133 +1,69 @@
 import axios from "axios";
-import { Quiz, User } from "./interface";
-import { UserQuizAttempt } from "@prisma/client";
-import { format } from "date-fns";
+import { Quiz, Tutorial, User, UserBadge, UserProgress, UserQuizAttempt } from "./interface";
 
 const API_BASE_URL = "/api";
 
+const api = axios.create({
+    baseURL: API_BASE_URL,
+    withCredentials: true,
+});
 
-
-const fetchUserData = async () => {
-    const { data } = await axios.get<User>(`${API_BASE_URL}/user`, {
-        withCredentials: true,
-    });
-    return data;
+// Generic fetch function with error handling
+const fetchData = async <T>(url: string, params?: object) => {
+    try {
+        const { data } = await api.get<T>(url, { params });
+        return data;
+    } catch (error) {
+        console.error(`Error fetching data from ${url}:`, error);
+        throw new Error("Failed to fetch data");
+    }
 };
 
-const fetchTutorials = async () => {
-    const { data } = await axios.get(`${API_BASE_URL}/tutorials`);
-    return data;
-}
-
-const fetchTutorial = async (id: string) => {
-    const { data } = await axios.get(`${API_BASE_URL}/tutorials/${id}`);
-    return data;
-}
-
-const fetchQuiz = async (id: string) => {
-    const { data } = await axios.get<Quiz>(`${API_BASE_URL}/quizzes/${id}`);
-    return data;
-}
-
-const fetchUserProgress = async (userId: string, tutorialId: string) => {
-    const { data } = await axios.get(`${API_BASE_URL}/progress/?userId=${userId}&tutorialId=${tutorialId}`);
-    return data;
-}
-
-const fetchDashboardData = async (email: string) => {
-    const { data } = await axios.get(`${API_BASE_URL}/dashboard?email=${email}`);
-    return data;
-}
-
-const fetchBadges = async (userId: number) => {
-    const { data } = await axios.get(`${API_BASE_URL}/badges?userId=${userId}`);
-    return data;
-}
-
-const fetchLeaderboard = async () => {
-    const { data } = await axios.get(`${API_BASE_URL}/leaderboard`);
-    return data;
-}
-
-const fetchTheme = async (userId: number) => {
-    const { data } = await axios.get(`${API_BASE_URL}/profile/theme?userId=${userId}`);
-    return data;
-}
-
-const fetchCoinTransactions = async (filter: string, searchQuery: string, page: number, dateRange: { endDate: string | number | Date; }[]) => {
-    const startDate = format(dateRange[0].startDate, "yyyy-MM-dd");
-    const endDate = format(dateRange[0].endDate, "yyyy-MM-dd");
-
-    const response = await fetch(`/api/coin-transactions?filter=${filter}&search=${searchQuery}&page=${page}&startDate=${startDate}&endDate=${endDate}`);
-    if (!response.ok) { throw new Error("Failed to fetch transactions"); }
-    return response.json();
+const postData = async <T>(url: string, body: object) => {
+    try {
+        const { data } = await api.post<T>(url, body);
+        return data;
+    } catch (error) {
+        console.error(`Error posting data to ${url}:`, error);
+        throw new Error("Failed to submit data");
+    }
 };
 
-const updateProfile = async ({ userId, avatar, theme }: { userId: number, avatar: string, theme: string }) => {
-    const { data } = await axios.put(`${API_BASE_URL}/profile`, { userId, avatarUrl: avatar, theme });
-    return data;
-}
-
-const submitQuizAttempt = async ({ userId, quizId, attempts }: { userId: number, quizId: number, attempts: { questionId: number, selectedOption: string }[] }) => {
-    const { data } = await axios.post<UserQuizAttempt>(`${API_BASE_URL}/quiz/submit`, { userId, quizId, attempts }, {
-        withCredentials: true,
-    });
-    return data;
-}
-
-const updateRewards = async (userId: number) => {
-    const { data } = await axios.post(`${API_BASE_URL}/rewards`, { userId });
-    return data;
-}
-
-const updateStreak = async (userId: number) => {
-    const { data } = await axios.post(`${API_BASE_URL}/streak`, { userId });
-    return data;
-}
-
-const updateTheme = async (userId: number, newTheme: string) => {
-    const { data } = await axios.put(`${API_BASE_URL}/profile/theme`, { userId, theme: newTheme });
-    return data;
-}
-
-// 📄 Export to CSV (With Date Range)
-export const exportToCSV = (transactions, startDate, endDate) => {
-    if (!transactions || transactions.length === 0) return;
-
-    const headers = ["Description", "Amount", "Date"];
-    const rows = transactions
-        .filter((txn) => new Date(txn.date) >= new Date(startDate) && new Date(txn.date) <= new Date(endDate))
-        .map((txn) => [txn.description, txn.amount, format(new Date(txn.date), "yyyy-MM-dd")]);
-
-    let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `coin_transactions_${startDate}_to_${endDate}.csv`);
-    document.body.appendChild(link);
-    link.click();
+const putData = async <T>(url: string, body: object) => {
+    try {
+        const { data } = await api.put<T>(url, body);
+        return data;
+    } catch (error) {
+        console.error(`Error updating data at ${url}:`, error);
+        throw new Error("Failed to update data");
+    }
 };
 
-// 🖨️ Export to PDF (With Date Range)
-export const exportToPDF = (transactions, startDate, endDate) => {
-    if (!transactions || transactions.length === 0) return;
+// Fetch functions
+const fetchUserData = () => fetchData<User>("/user");
+const fetchTutorials = () => fetchData<Tutorial[]>("/tutorials");
+const fetchTutorial = (id: number) => fetchData<Tutorial>(`/tutorials/${id}`);
+const fetchQuiz = (id: number) => fetchData<Quiz>(`/quizzes/${id}`);
+const fetchUserProgress = (userId: number, tutorialId: number) => fetchData<UserProgress>(`/tutorials/progress`, { userId, tutorialId });
+const fetchDashboardData = (email: string) => fetchData<User>(`/dashboard`, { email });
+const fetchBadges = (userId: number) => fetchData<UserBadge[]>(`/badges`, { userId });
+const fetchLeaderboard = () => fetchData<User[]>(`/leaderboard`);
+const fetchTheme = (userId: number) => fetchData(`/profile/theme`, { userId });
+const fetchUserCoins = (userId: number) => fetchData<{ coins: number }>(`/profile/coins`, { userId });
 
-    const doc = new jsPDF();
-    doc.text(`Coin Transactions (${startDate} to ${endDate})`, 14, 10);
-
-    const rows = transactions
-        .filter((txn) => new Date(txn.date) >= new Date(startDate) && new Date(txn.date) <= new Date(endDate))
-        .map((txn) => [txn.description, txn.amount, format(new Date(txn.date), "yyyy-MM-dd")]);
-
-    autoTable(doc, {
-        head: [["Description", "Amount", "Date"]],
-        body: rows,
-        startY: 20,
-    });
-
-    doc.save(`coin_transactions_${startDate}_to_${endDate}.pdf`);
+const fetchTransactions = async ({ page, limit, filter }: { page: number; limit: number; filter: string }) => {
+    return fetchData(`/transactions`, { page, limit, filter: filter !== "ALL" ? filter : undefined });
 };
 
+const fetchQuizAttempts = (quizIds: number[]) => fetchData<{ quizId: number }[]>(`/quiz/attempts`, { quizIds: quizIds.join(",") });
+
+// Update functions
+const updateProfile = (userId: number, avatar: string, theme: string) => putData(`/profile`, { userId, avatarUrl: avatar, theme });
+const submitQuizAttempt = (userId: number, quizId: number, attempts: { questionId: number; selectedOption: string }[]) => postData<UserQuizAttempt>(`/quiz/submit`, { userId, quizId, attempts });
+const updateRewards = (userId: number) => postData(`/rewards`, { userId });
+const updateStreak = (userId: number) => postData(`/streak`, { userId });
+const updateTheme = (userId: number, newTheme: string) => putData(`/profile/theme`, { userId, theme: newTheme });
+const updateProgress = (userId: number, tutorialId: number, percentageCompleted: number) => putData(`/tutorials/progress`, { userId, tutorialId, percentageCompleted });
 
 export {
     fetchUserData,
@@ -139,10 +75,13 @@ export {
     fetchBadges,
     fetchLeaderboard,
     fetchTheme,
-    fetchCoinTransactions,
+    fetchUserCoins,
+    fetchTransactions,
+    fetchQuizAttempts,
     updateProfile,
     submitQuizAttempt,
     updateRewards,
     updateStreak,
-    updateTheme
+    updateTheme,
+    updateProgress,
 };

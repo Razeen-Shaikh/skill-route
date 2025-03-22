@@ -1,89 +1,104 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import { FaEnvelope, FaLock, FaUser } from "react-icons/fa";
 
 const Register = () => {
-  const router = useRouter();
-  const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    password: "",
-  });
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
-  const registerMutation = useMutation({
-    mutationFn: async () => {
-      const res = await axios.post("/api/auth/register", formData);
-      return res.data;
-    },
-    onSuccess: () => {
-      router.push("/auth/login");
-    },
-    onError: (err: unknown) => {
-      if (axios.isAxiosError(err) && err.response) {
-        setError(err.response.data?.error || "Registration failed");
-      } else {
-        setError("Registration failed");
-      }
-    },
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(""); // Reset error
-    registerMutation.mutate();
+    setError("");
+    setIsLoading(true);
+
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password }),
+    });
+
+    const data = await res.json();
+    if (res.status !== 201) {
+      setError(data.message);
+      setIsLoading(false);
+    } else {
+      router.push("/auth/login");
+    }
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-96">
-        <h2 className="text-2xl font-bold text-center text-blue-600 mb-6">
-          Register
+    <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
+      <div className="bg-card text-card-foreground p-8 rounded-lg shadow-lg w-full max-w-md border border-border">
+        <h2 className="text-3xl font-bold text-center mb-6">
+          Create an Account
         </h2>
-        {error && <p className="text-red-500 text-center">{error}</p>}
-        <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
-          <input
-            type="text"
-            name="username"
-            placeholder="Username"
-            value={formData.username}
-            onChange={handleChange}
-            className="border p-2 rounded"
-            required
-          />
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
-            className="border p-2 rounded"
-            required
-          />
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={handleChange}
-            className="border p-2 rounded"
-            required
-          />
+
+        {/* Error Message */}
+        {error && (
+          <p className="text-destructive text-center p-2 bg-destructive/10 border border-destructive rounded-md animate-fadeIn">
+            {error}
+          </p>
+        )}
+
+        <form onSubmit={handleRegister} className="flex flex-col space-y-4">
+          <div className="relative">
+            <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="pl-10 border p-3 w-full rounded-lg bg-muted/20 text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              required
+            />
+          </div>
+
+          <div className="relative">
+            <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="pl-10 border p-3 w-full rounded-lg bg-muted/20 text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              required
+            />
+          </div>
+          <div className="relative">
+            <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="pl-10 border p-3 w-full rounded-lg bg-muted/20 text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              required
+            />
+          </div>
           <button
             type="submit"
-            className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
-            disabled={registerMutation.isPending}
+            className="bg-primary text-primary-foreground py-3 rounded-lg hover:scale-105 transition transform duration-200 disabled:bg-gray-400"
+            disabled={isLoading}
           >
-            {registerMutation.isPending ? "Registering..." : "Register"}
+            {isLoading ? "Signing Up..." : "Sign Up"}
           </button>
         </form>
+
+        <p className="text-center text-muted-foreground mt-4">
+          Already have an account?{" "}
+          <a
+            href="/auth/login"
+            className="underline text-primary hover:text-primary/80"
+          >
+            Login
+          </a>
+        </p>
       </div>
     </div>
   );

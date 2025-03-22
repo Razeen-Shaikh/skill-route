@@ -12,7 +12,7 @@ export async function PUT(req: Request) {
         });
 
         return NextResponse.json(updatedUser);
-    } catch (error) {
+    } catch {
         return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
     }
 }

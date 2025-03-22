@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-export async function GET(request: NextRequest, context: { params: { id: string } }) {
-    const { params } = context;
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+    const { id } = await params;
 
-    if (!params.id) {
+    if (!id) {
         return NextResponse.json(
             { error: 'id is required.' },
             { status: 400 }
         );
     }
 
-    const quizId = parseInt(params.id);
+    const quizId = parseInt(id);
     if (isNaN(quizId)) {
         return NextResponse.json(
             { error: 'Invalid quiz id.' },

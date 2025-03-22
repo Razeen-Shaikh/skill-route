@@ -11,6 +11,10 @@ export default function ThemeSwitcher() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
 
+  // **Step 1: State initialized as undefined to avoid hydration mismatch**
+  const [theme, setTheme] = useState<ThemeName | undefined>(undefined);
+
+  // **Step 2: Fetch theme from server**
   const {
     data: fetchedTheme,
     isLoading,
@@ -19,30 +23,31 @@ export default function ThemeSwitcher() {
     queryKey: ["theme", userId],
     queryFn: async () => {
       const themeFromServer = await fetchTheme(userId);
-      return themeFromServer ?? getStoredOrSystemTheme();
+      return themeFromServer;
     },
-    initialData: getStoredOrSystemTheme,
     enabled: !!userId,
   });
 
-  const [theme, setTheme] = useState<ThemeName | undefined>(
-    fetchedTheme?.theme
-  );
-
+  // **Step 3: Apply the correct theme after hydration**
   useEffect(() => {
     if (fetchedTheme) {
       setTheme(fetchedTheme?.theme);
+    } else {
+      setTheme(getStoredOrSystemTheme());
     }
-    console.log({ fetchedTheme });
   }, [fetchedTheme]);
 
+  // **Step 4: Toggle dark mode on document when theme changes**
   useEffect(() => {
-    if (!theme) {
-      return;
+    if (theme) {
+      document.documentElement.classList.toggle(
+        "dark",
+        theme === ThemeName.DARK
+      );
     }
-    document.documentElement.classList.toggle("dark", theme === ThemeName.DARK);
   }, [theme]);
 
+  // **Step 5: Mutation to update user preference**
   const updateThemeMutation = useMutation({
     mutationFn: async (newTheme: ThemeName) => updateTheme(userId, newTheme),
     onSuccess: (newTheme) => {
@@ -51,7 +56,8 @@ export default function ThemeSwitcher() {
     },
   });
 
-  if (isLoading) {
+  // **Step 6: Prevent hydration errors - Show loading state before theme is set**
+  if (theme === undefined || isLoading) {
     return (
       <button
         disabled
@@ -63,19 +69,22 @@ export default function ThemeSwitcher() {
     );
   }
 
-  if (isError) {
-    return null;
-  }
+  // **Step 7: Handle errors**
+  if (isError) return null;
 
   return (
     <button
       onClick={() => {
         const newTheme =
           theme === ThemeName.LIGHT ? ThemeName.DARK : ThemeName.LIGHT;
-        console.log({ theme, newTheme });
-        updateThemeMutation.mutate(newTheme);
+        setTheme(newTheme);
+        if (userId) {
+          updateThemeMutation.mutate(newTheme);
+        } else {
+          localStorage.setItem("theme", newTheme);
+        }
       }}
-      className="fixed bottom-4 right-4 p-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full shadow-lg hover:scale-110 transition"
+      className="fixed bottom-4 right-4 p-3 bg-gray-900 text-white dark:bg-white dark:text-gray-900 rounded-full shadow-lg hover:scale-110 transition"
       aria-label="Toggle theme"
     >
       {theme === ThemeName.LIGHT ? (
@@ -88,9 +97,7 @@ export default function ThemeSwitcher() {
 }
 
 function getStoredOrSystemTheme(): ThemeName {
-  if (typeof window === "undefined") {
-    return ThemeName.LIGHT;
-  }
+  if (typeof window === "undefined") return ThemeName.LIGHT;
   return (localStorage.getItem("theme") as ThemeName) ?? getSystemPreference();
 }
 

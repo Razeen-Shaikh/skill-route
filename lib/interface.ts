@@ -1,66 +1,232 @@
 interface User {
-    id: number;
-    name: string;
-    email: string;
-    avatar: string;
-    badges: string[];
-    achievements: string[];
-    stats: Stats;
-    attempts: Attempt[];
-};
+    id: number; // Auto-incremented ID
+    username: string; // Unique username
+    firstName: string;
+    lastName?: string;
+    email: string; // Unique email
+    passwordHash: string;
+    avatarUrl?: string;
+    role: string; // 'user' or 'admin'
+    failedAttempts: number;
+    lockedUntil?: Date;
+    createdAt: Date;
+    updatedAt: Date;
+    resetToken?: string;
+    resetTokenExpiry?: Date;
+    emailVerified: boolean;
+    verificationToken?: string;
 
-interface Stats {
-    progress: Progress[];
-    points: Point[];
+    profile?: UserProfile;
+    progress: UserProgress[];
+    quizAttempts: UserQuizAttempt[];
+    badges: UserBadge[];
+    streaks?: UserStreak;
+    recentActivities: RecentActivity[];
+}
+
+interface UserProfile {
+    userId: number;
     rank: number;
-    previous_rank: number;
-    quizzesAttempted: number;
-    bestScore: number;
-    coursesCompleted: number;
-    streak: number;
-    lastActiveDate: Date;
-}
-
-interface Point {
     points: number;
-    reason: string;
-    date: Date;
+    coins: number;
+    theme: ThemeName | null;
+    createdAt: Date;
+    updatedAt: Date;
+
+    user: User;
+
+    transactions: CoinTransaction[];
+    themes: Theme[];
 }
 
-interface Progress {
-    count: number;
-    date: Date;
+interface Tutorial {
+    id: number; // Auto-incremented ID
+    title: string;
+    description?: string;
+    content: string;
+    category?: string;
+    authorId?: number;
+    likes: number;
+    views: number;
+    isLocked: boolean;
+    cost: number;
+    nextTutorialId?: number;
+    difficulty: DifficultyLevel;
+    hasChallenge: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+
+    quizzes: Quiz[];
+    progress: UserProgress[];
 }
 
 interface Quiz {
-    id: number;
+    id: number; // Auto-incremented ID
     title: string;
-    description: string;
-    questions: Question[];
-    attemps: Attempt[];
+    isTimed: boolean;
+    timeLimit?: number;
+    maxScore: number;
+    passPercentage: number;
+    difficulty: DifficultyLevel;
+    createdAt: Date;
+    updatedAt: Date;
+
+    questions: QuizQuestion[];
+    attempts: UserQuizAttempt[];
+    tutorial?: Tutorial;
+    tutorialId?: number;
 }
 
-interface Attempt {
-    id: number;
-    score: number;
-    timestamp: Date;
+interface QuizQuestion {
+    id: number; // Auto-incremented ID
+    quizId: number;
+    questionText: string;
+    options: string[];
+    correctAnswer: string;
+    points: number;
+
+    createdAt: Date;
+    updatedAt: Date;
+
     quiz: Quiz;
 }
 
-interface Question {
-    id: number;
-    text: string;
-    options: string[];
-    answer: string;
-    points: number;
+interface UserProgress {
+    id: number; // Auto-incremented ID
+    userId: number;
+    tutorialId: number;
+    isCompleted: boolean;
+    completedAt?: Date;
+    attempts: number;
+    bestScore: number;
+    percentageCompleted: number;
+    interviewCompleted: boolean;
+    challengeCompleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+
+    user: User;
+    tutorial: Tutorial;
 }
 
-// need to implement this/made changes
-interface Course {
-    id: number;
-    title: string;
+interface UserQuizAttempt {
+    id: number; // Auto-incremented ID
+    userId: number;
+    quizId: number;
+    startedAt: Date;
+    completedAt?: Date;
+    score: number;
+    createdAt: Date;
+    updatedAt: Date;
+
+    user?: User;
+    quiz?: Quiz;
+
+    questionAttempts?: UserQuestionAttempt[];
+}
+
+interface UserQuestionAttempt {
+    id: number; // Auto-incremented ID
+    userQuizAttemptId: number;
+    questionId: number;
+    selectedOption: string;
+    isCorrect: boolean;
+    pointsEarned: number;
+    createdAt: Date;
+    updatedAt: Date;
+
+    quizAttempts: UserQuizAttempt;
+}
+
+interface CoinTransaction {
+    id: number; // Auto-incremented ID
+    userProfileId: number;
+    type: TransactionType;
+    amount: number;
     description: string;
-    quizzes: Quiz[];
+    transactionAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
+
+    userProfile: UserProfile;
 }
 
-export type { User, Stats, Point, Progress, Quiz, Attempt, Question, Course };
+interface Badge {
+    id: number; // Auto-incremented ID
+    name: string;
+    imageUrl: string;
+    pointsReq: number;
+    createdAt: Date;
+    updatedAt: Date;
+
+    badges: UserBadge[];
+}
+
+interface UserBadge {
+    id: number; // Auto-incremented ID
+    userId: number;
+    badgeId: number;
+    earnedAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
+
+    user: User;
+    badge: Badge;
+}
+
+interface UserStreak {
+    userId: number; // Relational ID
+    streakCount: number;
+    lastLogin?: Date;
+    createdAt: Date;
+    updatedAt: Date;
+
+    user: User
+}
+
+interface Theme {
+    id: number; // Auto-incremented ID
+    userProfileId: number;
+    name: string;
+    description?: string;
+    createdAt: Date;
+    updatedAt: Date;
+
+    userProfile: UserProfile
+}
+
+interface RecentActivity {
+    id: string; // UUID
+    userId: number;
+    activityType: string;
+    activityDetails: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+type TransactionType = "ALL" | "EARNED" | "SPENT";
+
+type ThemeName = "DARK" | "LIGHT";
+
+type DifficultyLevel = "EASY" | "MEDIUM" | "HARD";
+
+
+export type {
+    User,
+    UserProfile,
+    Tutorial,
+    Quiz,
+    QuizQuestion,
+    UserProgress,
+    UserQuizAttempt,
+    UserQuestionAttempt,
+    CoinTransaction,
+    Badge,
+    UserBadge,
+    UserStreak,
+    Theme,
+    RecentActivity,
+    TransactionType,
+    ThemeName,
+    DifficultyLevel
+}
