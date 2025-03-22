@@ -2,7 +2,52 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+### Install Docker
+
+If you haven't installed Docker yet, download and install it from the official website:
+
+- [Download Docker](https://www.docker.com/get-started/)
+
+Make sure Docker is running before proceeding.
+
+### Running with Docker & PostgreSQL
+
+If you already have Docker files set up, simply run the following command to start your Next.js app along with PostgreSQL:
+
+```bash
+docker-compose up -d
+```
+
+### Running PostgreSQL Database Locally
+
+If you want to run PostgreSQL locally, you can use the following command:
+
+```bash
+npx prisma migrate dev --name init
+npx prisma db push
+```
+
+### Seed Database
+
+```bash
+npx prisma db seed
+```
+
+### Open Database Studio
+
+You can open the database studio using the following command:
+
+```bash
+npx prisma studio
+```
+
+or to connect to the database on the command line
+
+```bash
+docker-compose exec postgres psql -U admin -d learning_platform -W
+```
+
+### Running the Development Server Without Docker
 
 ```bash
 npm run dev
@@ -15,6 +60,12 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+### Close Docker
+
+```bash
+docker-compose down
+```
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
