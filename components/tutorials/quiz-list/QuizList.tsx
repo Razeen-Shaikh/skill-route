@@ -1,23 +1,25 @@
 "use client";
 
-import { Quiz } from "@/lib/interface";
+import { Quiz } from "@/lib/interfaces";
 import ProgressBar from "../ProgressBar";
 import QuizCard from "../quiz-card/QuizCard";
 import { fetchQuizAttempts } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 
 export default function QuizList({ quizzes }: { quizzes: Quiz[] }) {
-  const quizIds = quizzes.map((quiz) => quiz.id);
+  const quizIds = quizzes?.map((quiz) => quiz.id);
 
-  const { data: completedQuizzes = [] } = useQuery<{ quizId: number }[]>({
+  const { data: completedQuizzes = [] } = useQuery({
     queryKey: ["completedQuizzes", quizIds],
-    queryFn: (): Promise<{ quizId: number }[]> => fetchQuizAttempts(quizIds),
+    queryFn: () => fetchQuizAttempts(quizIds),
     enabled: quizIds.length > 0,
   });
 
   const totalQuizzes = quizzes.length;
-  const completedCount = completedQuizzes.length;
-  const progress = totalQuizzes > 0 ? (completedCount / totalQuizzes) * 100 : 0;
+  const completedCount = quizzes.filter((quiz) =>
+    completedQuizzes.some((completed) => completed.quizId === quiz.id)
+  ).length;
+  const progress = (completedCount / totalQuizzes) * 100;
 
   return (
     <div className="space-y-4 text-muted-foreground">
@@ -28,11 +30,17 @@ export default function QuizList({ quizzes }: { quizzes: Quiz[] }) {
       <h2 className="text-2xl font-semibold mt-6">Quizzes</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {quizzes.map((quiz) => {
-          const isCompleted = completedQuizzes.some(
-            (completed) => completed.quizId === quiz.id
-          );
+          const isCompleted = completedQuizzes.some((completed: { quizId: string; score: number }) => completed.quizId === quiz.id);
+          const { score, completedAt } = completedQuizzes.find((completed) => completed.quizId === quiz.id) || {};
+
           return (
-            <QuizCard key={quiz.id} quiz={quiz} isCompleted={isCompleted} />
+            <QuizCard
+              key={quiz.id}
+              quiz={quiz}
+              isCompleted={isCompleted}
+              score={score ?? 0}
+              completedAt={completedAt ?? ""}
+            />
           );
         })}
       </div>

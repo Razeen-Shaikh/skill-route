@@ -4,24 +4,27 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { fetchQuiz, submitQuizAttempt } from "@/lib/api";
 import { useSession } from "next-auth/react";
-import { useCallback, useMemo, useState } from "react";
-import QuizSkeleton from "@/app/tutorials/skeletons/quiz";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import QuizSkeleton from "@/components/skeletons/QuizSkeleton";
 
 export default function QuizPage({ quizId }: { quizId: string }) {
   const [selectedOptions, setSelectedOptions] = useState<
-    Record<number, string>
+    Record<string, string>
   >({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   const userId = session?.user?.id;
+  const isAuthenticated = status === "authenticated";
 
   const { data: quiz, isLoading } = useQuery({
     queryKey: ["quiz", quizId],
-    queryFn: () => fetchQuiz(Number(quizId)),
-    enabled: !!quizId,
+    queryFn: () => fetchQuiz(quizId),
+    enabled: !!quizId && isAuthenticated,
+    refetchOnWindowFocus: false,
   });
 
   const currentQuestion = useMemo(
@@ -29,32 +32,23 @@ export default function QuizPage({ quizId }: { quizId: string }) {
     [currentQuestionIndex, quiz]
   );
 
-  const currentQuestionId = useMemo(
-    () => currentQuestion?.id ?? null,
-    [currentQuestion]
-  );
-
   const handleOptionSelect = useCallback(
     (option: string) => {
-      if (!currentQuestionId) {
-        return;
-      }
+      if (!currentQuestion) return;
       setSelectedOptions((prev) => ({
         ...prev,
-        [currentQuestionId]: option,
+        [currentQuestion.id]: option,
       }));
     },
-    [currentQuestionId]
+    [currentQuestion]
   );
 
   const { mutate } = useMutation({
     mutationFn: async () => {
-      if (!quizId) {
-        throw new Error("Quiz ID is not available");
-      }
+      if (!quizId) throw new Error("Quiz ID is not available");
       return submitQuizAttempt(
-        Number(userId),
-        Number(quizId),
+        userId!,
+        quizId,
         quiz?.questions?.map((q) => ({
           questionId: q.id,
           selectedOption: selectedOptions[q.id] ?? "",
@@ -75,10 +69,31 @@ export default function QuizPage({ quizId }: { quizId: string }) {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    mutate();
-  };
+  const handleSubmit = useCallback(
+    (e?: React.FormEvent) => {
+      if (e) {
+        e.preventDefault();
+      }
+      mutate();
+    },
+    [mutate]
+  );
+
+  useEffect(() => {
+    if (quiz?.isTimed) {
+      setTimeLeft(quiz.timeLimit ?? 0);
+      const timer = setInterval(() => {
+        setTimeLeft((prev) => (prev !== null ? prev - 1 : prev));
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [quiz]);
+
+  useEffect(() => {
+    if (timeLeft === 0) {
+      handleSubmit();
+    }
+  }, [handleSubmit, timeLeft]);
 
   if (isLoading) return <QuizSkeleton />;
   if (!quiz) return <p>Quiz not found.</p>;
@@ -86,6 +101,11 @@ export default function QuizPage({ quizId }: { quizId: string }) {
   return (
     <div className="p-6 space-y-4">
       <h1 className="text-3xl font-bold mb-6">{quiz.title}</h1>
+      {quiz.isTimed && (
+        <div className="text-red-500 font-semibold text-lg">
+          ⏳ Time Left: {timeLeft} seconds
+        </div>
+      )}
       <div className="border dark:border-gray-500 border-gray-300 rounded-lg p-4 mb-4">
         <p className="text-lg font-semibold">{currentQuestion?.questionText}</p>
       </div>
@@ -94,28 +114,18 @@ export default function QuizPage({ quizId }: { quizId: string }) {
         {currentQuestion?.options.map((option, index) => (
           <label
             key={index}
-            htmlFor={`option-${currentQuestionIndex}-${index}`}
-            className={`block border rounded-lg p-2 cursor-pointer transition ${
-              selectedOptions[currentQuestion?.id] === option
-                ? "bg-blue-500 hover:bg-blue-600 hover:bg-blue-200 text-white"
-                : "dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 hover:bg-gray-100"
-            }`}
+            className={`block border rounded-lg p-2 cursor-pointer transition ${selectedOptions[currentQuestion?.id] === option
+              ? "bg-blue-500 text-white"
+              : "dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 hover:bg-gray-100"
+              }`}
             onClick={() => handleOptionSelect(option)}
           >
-            <input
-              id={`option-${currentQuestionIndex}-${index}`}
-              type="radio"
-              name={`question-${currentQuestionIndex}`}
-              className="hidden"
-              value={option}
-              readOnly
-            />
             {option}
           </label>
         ))}
       </div>
 
-      <div className="flex justify-end mt-4">
+      <div className="flex items-center justify-end mt-4">
         {currentQuestionIndex < (quiz?.questions?.length ?? 0) - 1 ? (
           <button
             className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg text-white cursor-pointer"
@@ -125,10 +135,10 @@ export default function QuizPage({ quizId }: { quizId: string }) {
           </button>
         ) : (
           <button
-            className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg text-white cursor-pointer"
+            className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg text-white cursor-pointer"
             onClick={handleSubmit}
           >
-            Finish
+            Finish Quiz
           </button>
         )}
       </div>

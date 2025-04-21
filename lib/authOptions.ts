@@ -4,9 +4,6 @@ import GitHubProvider from "next-auth/providers/github";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 
-const MAX_ATTEMPTS = 5;
-const LOCKOUT_DURATION = 15 * 60 * 1000;
-
 export const authOptions = {
     providers: [
         GoogleProvider({
@@ -37,36 +34,15 @@ export const authOptions = {
                     throw new Error("User not found");
                 }
 
-                // Check if the account is locked
-                if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
-                    const remainingTime = Math.ceil((new Date(user.lockedUntil).getTime() - new Date().getTime()) / 60000);
-                    throw new Error(`Too many failed attempts. Try again in ${remainingTime} minutes.`);
-                }
-
-                // Check if the email is verified
                 if (!user.emailVerified) {
                     throw new Error("Please verify your email before logging in.");
                 }
 
-                const passwordMatch = await bcrypt.compare(credentials.password, user.passwordHash);
+                const passwordMatch = await bcrypt.compare(credentials.password, user.passwordHash!);
 
                 if (!passwordMatch) {
-                    await prisma.user.update({
-                        where: { id: user.id },
-                        data: {
-                            failedAttempts: user.failedAttempts + 1,
-                            lockedUntil: user.failedAttempts + 1 >= MAX_ATTEMPTS ? new Date(Date.now() + LOCKOUT_DURATION) : null,
-                        },
-                    });
-
-                    throw new Error(`Invalid credentials. ${MAX_ATTEMPTS - (user.failedAttempts + 1)} attempts left.`);
+                    throw new Error("Invalid credentials.");
                 }
-
-                // Reset failed attempts after successful login
-                await prisma.user.update({
-                    where: { id: user.id },
-                    data: { failedAttempts: 0, lockedUntil: null },
-                });
 
                 return {
                     id: user.id.toString(),
@@ -80,25 +56,62 @@ export const authOptions = {
         }),
     ],
     callbacks: {
-        async jwt({ token, user }: { token: Record<string, unknown>; user?: { id: string; avatarUrl: string; role: string } }) {
+        async signIn({ user, account }: { user: { email?: string; id?: string; name?: string; image?: string }; account: { provider?: string } }) {
+            if (account?.provider === "google" || account?.provider === "github") {
+                try {
+                    const email = user.email || `${user.id}@${account.provider}.com`;
+
+                    // Check if user exists
+                    let existingUser = await prisma.user.findUnique({ where: { email } });
+
+                    if (!existingUser) {
+                        const baseUsername = user.name?.replace(/\s+/g, "").toLowerCase() || "user";
+                        let username = baseUsername;
+                        let counter = 1;
+
+                        // Ensure unique username
+                        while (await prisma.user.findUnique({ where: { username } })) {
+                            username = `${baseUsername}${counter}`;
+                            counter++;
+                        }
+
+                        existingUser = await prisma.user.create({
+                            data: {
+                                email,
+                                username,
+                                firstName: user.name?.split(" ")[0] || "User",
+                                avatarUrl: user.image,
+                                role: "USER",
+                                emailVerified: true, // OAuth users are verified
+                                profile: { create: { theme: "LIGHT" } },
+                            },
+                        });
+                    }
+
+                    return true;
+                } catch (error) {
+                    console.error("OAuth Sign-in Error:", error);
+                    return false;
+                }
+            }
+            return true;
+        },
+        async jwt({ token, user }: { token: { id?: string; avatarUrl?: string; role?: string }; user?: { id: string; avatarUrl: string; role: string } }) {
             if (user) {
-                return {
-                    ...token,
-                    id: user.id,
-                    avatarUrl: user.avatarUrl,
-                    role: user.role,
-                };
+                token.id = user.id;
+                token.avatarUrl = user.avatarUrl;
+                token.role = user.role;
             }
             return token;
         },
-        async session({ session, token }: { session: import("next-auth").Session; token: { id: string; avatarUrl: string; role: string } }) {
+        async session({ session, token }: { session: { user?: { id?: string; image?: string; role?: string } }; token: { id?: string; avatarUrl?: string; role?: string } }) {
             if (session.user) {
-                session.user.id = token.id;
+                session.user.id = token.id?.toString();
                 session.user.image = token.avatarUrl;
                 session.user.role = token.role;
             }
             return session;
-        }
+        },
     },
     session: {
         strategy: "jwt",

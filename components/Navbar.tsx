@@ -31,7 +31,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link
             href="/"
-            className="text-xl font-bold text-gray-900 dark:text-white"
+            className="text-xl font-bold text-gray-900 dark:text-white cursor-pointer flex items-center"
           >
             🚀 SkillRoute
           </Link>
@@ -47,7 +47,10 @@ export default function Navbar() {
             {session ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
                     <User className="w-5 h-5" />
                     {session?.user?.name || "Profile"}
                   </Button>
@@ -90,7 +93,7 @@ export default function Navbar() {
               {session ? (
                 <button
                   onClick={() => logOut()}
-                  className="block w-full text-left px-3 py-2 rounded-md text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-800"
+                  className="block w-full text-left px-3 py-2 rounded-md text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-800 cursor-pointer"
                 >
                   Logout
                 </button>
@@ -114,7 +117,7 @@ const NavLink = ({
 }) => (
   <Link
     href={href}
-    className="block px-3 py-2 rounded-md text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-800"
+    className="block px-3 py-2 rounded-md text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-800 cursor-pointer"
   >
     {children}
   </Link>

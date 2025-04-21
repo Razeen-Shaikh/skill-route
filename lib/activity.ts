@@ -1,13 +1,19 @@
+import { ActivityType } from "@prisma/client";
 import prisma from "./prisma";
 
 export async function logActivity(
   userId: string,
-  type: string,
-  referenceId?: string,
-  value?: number,
-  description?: string
+  type: ActivityType,
+  xpAwarded?: number,
+  description?: string,
+  quizId?: string,
+  tutorialId?: string,
+  roadmapId?: string,
+  roadmapStepId?: string,
+  quizAttemptId?: string,
+  questionAttemptId?: string,
 ) {
-  await prisma.recentActivity.create({
-    data: { userId: Number(userId), type, referenceId: referenceId ? Number(referenceId) : undefined, value, description },
+  await prisma.lastActivity.create({
+    data: { userId, type, xpAwarded, description, quizId, tutorialId, roadmapId, roadmapStepId, quizAttemptId, questionAttemptId },
   });
 }

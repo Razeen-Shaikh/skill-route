@@ -9,10 +9,10 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: "User ID required" }, { status: 400 });
     }
 
-    const profile = await prisma.userProfile.findUnique({ where: { userId: parseInt(userId) }, select: { theme: true } });
+    const profile = await prisma.userProfile.findUnique({ where: { userId }, select: { theme: true } });
 
     return profile
-        ? NextResponse.json(profile)
+        ? NextResponse.json(profile.theme)
         : NextResponse.json({ error: "User not found" }, { status: 404 });
 }
 
@@ -28,7 +28,7 @@ export async function PUT(req: Request) {
     }
 
     const updatedUser = await prisma.userProfile.update({
-        where: { userId: parseInt(userId) },
+        where: { userId },
         data: { theme },
     });
 

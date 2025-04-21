@@ -1,6 +1,6 @@
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import QuizList from "@/components/tutorials/quiz-list/QuizList";
-import { Tutorial } from "@/lib/interface";
+import { Tutorial } from "@/lib/interfaces/interface";
 
 export default function TutorialContent({ tutorial }: { tutorial: Tutorial }) {
   return (

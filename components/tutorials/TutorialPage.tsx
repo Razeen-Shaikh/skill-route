@@ -9,41 +9,33 @@ import QuizList from "@/components/tutorials/quiz-list/QuizList";
 import { fetchTutorial, fetchUserProgress, updateProgress } from "@/lib/api";
 import LockedTutorial from "@/components/tutorials/LockedTutorial";
 import TutorialHeader from "@/components/tutorials/TutorialHeader";
-import { Tutorial, UserProgress, UserQuizAttempt } from "@/lib/interface";
 import { Skeleton } from "../ui/skeleton";
+import Link from "next/link";
 
 export default function TutorialPage({ tutorialId }: { tutorialId: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const userId = session?.user?.id;
+  const isAuthenticated = status === "authenticated" && userId;
 
-  const { data: tutorial, isLoading } = useQuery<Tutorial>({
+  const { data: tutorial, isLoading: isLoadingTutorial } = useQuery({
     queryKey: ["tutorial", tutorialId],
-    queryFn: () => {
-      if (!tutorialId) throw new Error("Tutorial ID is required");
-      return fetchTutorial(Number(tutorialId));
-    },
-    enabled: !!tutorialId && !!userId,
+    queryFn: () => fetchTutorial(tutorialId),
+    enabled: !!tutorialId,
+    refetchOnWindowFocus: false,
   });
 
-  const { data: progress } = useQuery<UserProgress>({
+  const { data: progress, isLoading: isLoadingProgress } = useQuery({
     queryKey: ["progress", userId, tutorialId],
-    queryFn: () => fetchUserProgress(Number(userId), Number(tutorialId)),
+    queryFn: () => fetchUserProgress(userId!, tutorialId),
     enabled: !!tutorialId && !!userId,
+    refetchOnWindowFocus: false,
   });
 
   const updateProgressMutation = useMutation({
-    mutationFn: (progressData: {
-      userId: number;
-      tutorialId: number;
-      percentageCompleted: number;
-    }) =>
-      updateProgress(
-        progressData.userId,
-        progressData.tutorialId,
-        progressData.percentageCompleted
-      ),
+    mutationFn: (progressData: { userId: string; tutorialId: string; percentageCompleted: number; }) =>
+      updateProgress(progressData.userId, progressData.tutorialId, progressData.percentageCompleted),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["progress", userId, tutorialId],
@@ -51,9 +43,7 @@ export default function TutorialPage({ tutorialId }: { tutorialId: string }) {
     },
   });
 
-  const hasCompletedQuizzes = tutorial?.quizzes.every(
-    (quiz: { attempts: UserQuizAttempt[] }) => quiz.attempts.length > 0
-  );
+  const hasCompletedQuizzes = tutorial?.quizzes.every((quiz) => quiz.attempts.length > 0);
 
   const handleNext = () => {
     if (tutorial?.nextTutorialId) {
@@ -62,19 +52,12 @@ export default function TutorialPage({ tutorialId }: { tutorialId: string }) {
   };
 
   const handleFinishTutorial = () => {
-    const overallPercentageCompleted =
-      tutorial &&
-      (tutorial?.quizzes?.filter(
-        (quiz: { attempts: UserQuizAttempt[] }) => quiz?.attempts?.length > 0
-      ).length /
-        tutorial?.quizzes.length) *
-        100;
+    const overallPercentageCompleted = tutorial && (tutorial?.quizzes?.filter((quiz) => quiz?.attempts?.length > 0).length / tutorial?.quizzes.length) * 100;
 
-    updateProgressMutation.mutate({
-      tutorialId: Number(tutorialId),
-      userId: Number(userId),
-      percentageCompleted: overallPercentageCompleted ?? 0,
-    });
+    if (userId) {
+      updateProgressMutation.mutate({ tutorialId, userId, percentageCompleted: overallPercentageCompleted ?? 0, });
+    }
+
   };
 
   const isLastTutorial = !tutorial?.nextTutorialId;
@@ -86,7 +69,7 @@ export default function TutorialPage({ tutorialId }: { tutorialId: string }) {
       : "Go to Interview Questions"
     : "Next Tutorial";
 
-  if (isLoading && !tutorial && !tutorialId) {
+  if (isLoadingTutorial || isLoadingProgress) {
     return (
       <div className="p-8 space-y-8">
         {/* Skeleton for Header */}
@@ -131,7 +114,21 @@ export default function TutorialPage({ tutorialId }: { tutorialId: string }) {
 
           <InterviewSection />
 
-          <QuizList quizzes={tutorial?.quizzes ?? []} />
+          {isAuthenticated ? (
+            <QuizList quizzes={tutorial?.quizzes ?? []} />
+          ) : (
+            <div>
+              Your learning adventure starts here —{" "}
+              <Link href="/auth/login" className="underline text-blue-500">
+                log in
+              </Link>{" "}
+              or{" "}
+              <Link href="/auth/register" className="underline text-blue-500">
+                sign up
+              </Link>{" "}
+              to begin!
+            </div>
+          )}
         </>
       )}
     </div>

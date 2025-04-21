@@ -3,14 +3,14 @@ import { getAuthUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { TransactionType } from "@prisma/client";
 
-export async function GET(req) {
+export async function GET(req: NextRequest) {
     const user = await getAuthUser();
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = parseInt(user?.id);
+    const userId = user?.id;
 
     if (!userId) {
         return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
@@ -19,7 +19,7 @@ export async function GET(req) {
     const url = new URL(req.url);
     const page = Number(url.searchParams.get("page")) || 1;
     const limit = Number(url.searchParams.get("limit")) || 5;
-    const filter = url.searchParams.get("filter") as TransactionType;
+    const filter = url.searchParams.get("filter") as unknown as TransactionType;
 
     if (!Number.isInteger(page) || page <= 0) {
         return NextResponse.json({ error: "Invalid page number" }, { status: 400 });
@@ -34,7 +34,7 @@ export async function GET(req) {
     }
 
     const whereClause = {
-        userProfileId: userId,
+        profileId: userId,
         ...(filter && Object.values(TransactionType).includes(filter) && { type: filter }),
     };
 
@@ -59,9 +59,12 @@ export async function GET(req) {
 export async function POST(req: NextRequest) {
     try {
         const user = await getAuthUser();
-        const userId = parseInt(user?.id);
 
         if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+        const userId = user?.id?.toString();
+
+        if (!userId) return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
 
         const { type, amount, description } = await req.json();
 
@@ -70,25 +73,29 @@ export async function POST(req: NextRequest) {
         }
 
         // Ensure enough coins are available for spending
-        const profile = await prisma.userProfile.findUnique({ where: { userId } });
-        if (type === "SPENT" && profile!.coins < amount) {
+        const profile = await prisma.userProfile.findUnique({ where: { userId }, include: { coinWallet: true } });
+
+        if (!profile) {
+            return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+        }
+
+        if (type === "SPENT" && profile!.coinWallet!.coins < amount) {
             return NextResponse.json({ error: "Insufficient coins" }, { status: 400 });
         }
 
         const transaction = await prisma.coinTransaction.create({
             data: {
-                userProfileId: userId,
+                profileId: userId,
                 type,
                 amount,
                 description,
             },
         });
 
-        // Update user's coin balance
-        await prisma.userProfile.update({
-            where: { userId },
+        await prisma.coinWallet.update({
+            where: { profileId: profile!.coinWallet!.profileId },
             data: {
-                coins: type === "EARNED" ? profile!.coins + amount : profile!.coins - amount,
+                coins: type === "EARNED" ? profile!.coinWallet!.coins + amount : profile!.coinWallet!.coins - amount,
             },
         });
 

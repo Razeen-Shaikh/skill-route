@@ -1,8 +1,23 @@
+"use client";
+
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 
 export default function Home() {
+  const { status } = useSession();
+
+  const isAuthenticated = status === "authenticated";
+
+  if (status === "loading") {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
+
   return (
-    <div className="h-[calc(100vh-4.5rem)] flex flex-col items-center bg-background scrollbar-thin scrollbar-track-gray-200 scrollbar-thumb-gray-500 text-foreground overflow-y-auto">
+    <div className="h-[calc(100vh-4.5rem)] flex flex-col items-center bg-background text-foreground overflow-y-auto">
       {/* Hero Section */}
       <section className="w-full py-16 text-center bg-primary text-primary-foreground">
         <div className="max-w-3xl mx-auto px-6">
@@ -14,8 +29,8 @@ export default function Home() {
             progress, and climb the leaderboard!
           </p>
           <div className="mt-6">
-            <Link href="/auth/register">
-              <button className="bg-secondary text-secondary-foreground hover:bg-secondary/80 px-6 py-3 rounded-lg font-semibold shadow-lg transition">
+            <Link href="/roadmaps">
+              <button className="bg-secondary text-secondary-foreground hover:bg-secondary/80 px-6 py-3 rounded-lg font-semibold shadow-lg transition cursor-pointer">
                 Get Started
               </button>
             </Link>
@@ -64,13 +79,15 @@ export default function Home() {
         <p className="text-muted-foreground">
           Sign up now and take your skills to the next level.
         </p>
-        <div className="mt-6">
-          <Link href="/auth/register">
-            <button className="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold hover:bg-primary/80 shadow-lg transition">
-              Sign Up Now
-            </button>
-          </Link>
-        </div>
+        {!isAuthenticated && (
+          <div className="mt-6">
+            <Link href="/auth/register">
+              <button className="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold hover:bg-primary/80 shadow-lg transition cursor-pointer">
+                Sign Up Now
+              </button>
+            </Link>
+          </div>
+        )}
       </section>
     </div>
   );

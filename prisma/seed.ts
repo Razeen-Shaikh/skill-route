@@ -1,23 +1,85 @@
-import { ThemeName, DifficultyLevel, User, UserQuestionAttempt, UserProgress } from "@/lib/interface";
+import { getLevelFromXP, getRankFromLevelXP } from "@/lib/helper";
 import prisma from "@/lib/prisma";
+import { ActivityType, Badge, CoinTransaction, CoinWallet, DifficultyLevel, LastActivity, Quiz, QuizQuestion, Roadmap, RoadmapStep, RoadmapType, StepStatus, Tag, ThemeName, TransactionType, Tutorial, TutorialStatus, User, UserBadge, UserProfile, UserProgress, UserQuestionAttempt, UserQuizAttempt, UserRole, UserStreak } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import slugify from "slugify";
 
 const hashPassword = async (password: string) => await bcrypt.hash(password, 10);
+
+const roles: UserRole[] = ["USER", "ADMIN", "MODERATOR"];
 const themeOptions: ThemeName[] = ['LIGHT', 'DARK'];
 const difficultyLevels: DifficultyLevel[] = ["EASY", "MEDIUM", "HARD"];
+const tutorialStatus: TutorialStatus[] = ["DRAFT", "PENDING_APPROVAL", "PUBLISHED"];
+const transactionType: TransactionType[] = ["EARNED", "SPENT"];
+const activityType: ActivityType[] = ["BADGE", "COINS", "LOGIN", "QUIZ", "TUTORIAL", "ROADMAP", "STEP", "TRANSACTION", "XP", "LEVEL"];
+const roadmapType: RoadmapType[] = ["AI", "BACKEND", "DEVOPS", "FRONTEND", "FULLSTACK"];
+const getTheme = () => themeOptions[Math.floor(Math.random() * themeOptions.length)];
+const getRandomDifficulty = (): DifficultyLevel =>
+    difficultyLevels[Math.floor(Math.random() * difficultyLevels.length)];
+const getTutorialStatus = (): TutorialStatus => tutorialStatus[Math.floor(Math.random() * tutorialStatus.length)];
+const getRole = (): UserRole => roles[Math.floor(Math.random() * roles.length)];
+const getTransactionType = (): TransactionType => transactionType[Math.floor(Math.random() * transactionType.length)];
+const getActivityType = (): ActivityType => activityType[Math.floor(Math.random() * activityType.length)];
+const getRoadmapType = (): RoadmapType => roadmapType[Math.floor(Math.random() * roadmapType.length)];
+
 const getRandomDate = (start: Date, end: Date) => new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
 const getRandomBool = () => Math.random() < 0.5;
 let selected: { [key: string]: string } = {};
-const selectedOption = (id: number, quizQuestion: { options: string[] }) => {
+const selectedOption = (id: string, quizQuestion: { options: string[] }) => {
     selected = { [id]: quizQuestion.options[Math.floor(Math.random() * 4)] };
     return selected[id];
 }
-// const calculateCoins = (score: number, maxScore: number, difficulty: 'easy' | 'medium' | 'hard') => {
-//     const difficultyMultiplier = difficulty === 'easy' ? 1 : difficulty === 'medium' ? 1.5 : 2;
-//     const baseCoins = 10; // Minimum reward per quiz
-//     return Math.floor((score / maxScore) * difficultyMultiplier * baseCoins);
-// };
 
+const getResetToken = () => Math.random().toString(36).substring(2, 15);
+
+const getRandomTimeLimit = () =>
+    [30, 60, 90, 120, 150, 180, 210, 240, 270, 300][Math.floor(Math.random() * 10)];
+
+
+// User Progress
+const getPercentageCompleted = (userId: string, tutorialId: string, quizRecords: Quiz[] = [], quizAttemptRecords: UserQuizAttempt[] = []) => {
+    const tutorialQuizzes = quizRecords.filter(q => q.tutorialId === tutorialId);
+    const completedQuizzes = quizAttemptRecords.filter(q => q.profileId === userId && tutorialQuizzes.some(tq => tq.id === q.quizId));
+
+    return tutorialQuizzes.length > 0 ? Math.round((completedQuizzes.length / tutorialQuizzes.length) * 100) : 0;
+};
+const getUserId = (userProfileRecords: UserProfile[]) => {
+    return userProfileRecords[Math.floor(Math.random() * userProfileRecords.length)].userId;
+}
+
+const getTotalQuizAttemptsByUserAndTutorial = (userId: string, tutorialId: string, quizRecords: Quiz[] = [], quizAttemptRecords: UserQuizAttempt[] = []) => {
+    const tutorialQuizzes = quizRecords.filter((q: { tutorialId: string; id: string }) => q.tutorialId === tutorialId).map(q => q.id);
+
+    return quizAttemptRecords.filter(q => q.profileId === userId && tutorialQuizzes.includes(q.quizId)).length;
+};
+
+const getBestScoreByUserIdAndTutorialId = (userId: string, tutorialId: string, quizRecords: Quiz[] = [], quizAttemptRecords: UserQuizAttempt[] = []) => {
+    const tutorialQuizzes = quizRecords.filter(q => q.tutorialId === tutorialId).map(q => q.id);
+
+    const userAttempts = quizAttemptRecords.filter(q => q.profileId === userId && tutorialQuizzes.includes(q.quizId));
+
+    if (userAttempts.length === 0) return 0;
+
+    return Math.max(...userAttempts.map(q => q.score));
+};
+
+
+const getIsCompleted = (percentageCompleted: number) => percentageCompleted === 100;
+
+const getQuizId = (quizRecords: Quiz[] = [], tutorialRecords: Tutorial[] = []) =>
+    quizRecords.filter((q: { tutorialId: string; id: string }) => q.tutorialId === tutorialRecords[0].id)[Math.floor(Math.random() * quizRecords.filter((q: { tutorialId: string; id: string }) => q.tutorialId === tutorialRecords[0].id).length)].id;
+const getScoreBasedOnDifficulty = (difficulty: string) => {
+    switch (difficulty) {
+        case "EASY":
+            return Math.floor(Math.random() * (100 - 60) + 60);
+        case "MEDIUM":
+            return Math.floor(Math.random() * (90 - 40) + 40);
+        case "HARD":
+            return Math.floor(Math.random() * (80 - 20) + 20);
+        default:
+            return Math.floor(Math.random() * 100);
+    }
+};
 
 async function main() {
     console.log('🌱 Starting database seeding...');
@@ -26,42 +88,55 @@ async function main() {
 
     console.log("🌱 Seeding users...");
 
-    const usersData: Partial<User>[] = [
-        { email: "alice@mail.com", username: "razeen", firstName: "Razeen", lastName: "Shaikh", role: "admin" },
-        { email: "bob@mail.com", username: "bob", firstName: "Bob", lastName: "Smith", role: "user" },
-        { email: "charlie@mail.com", username: "charlie", firstName: "Charlie", lastName: "Brown", role: "user" },
-        { email: "kali@mail.com", username: "kali", firstName: "Kali", lastName: "Smith", role: "user" },
-        { email: "jane@mail.com", username: "jane", firstName: "Jane", lastName: "Doe", role: "user" },
-        { email: "john@mail.com", username: "john", firstName: "John", lastName: "Doe", role: "user" },
-        { email: "mark@mail.com", username: "mark", firstName: "Mark", lastName: "Smith", role: "admin" },
-        { email: "jim@mail.com", username: "jim", firstName: "Jim", lastName: "Smith", role: "user" },
-        { email: "joe@mail.com", username: "joe", firstName: "Joe", lastName: "Smith", role: "user" },
-        { email: "mike@mail.com", username: "mike", firstName: "Mike", lastName: "Smith", role: "user" },
-        { email: "sally@mail.com", username: "sally", firstName: "Sally", lastName: "Smith", role: "user" },
-        { email: "sue@mail.com", username: "sue", firstName: "Sue", lastName: "Smith", role: "admin" },
-        { email: "tom@mail.com", username: "tom", firstName: "Tom", lastName: "Smith", role: "user" },
-        { email: "tim@mail.com", username: "tim", firstName: "Tim", lastName: "Smith", role: "user" },
+    const usersData = [
+        { email: "alice@mail.com", username: "razeen", firstName: "Razeen", lastName: "Shaikh" },
+        { email: "bob@mail.com", username: "bob", firstName: "Bob", lastName: "Smith" },
+        { email: "charlie@mail.com", username: "charlie", firstName: "Charlie", lastName: "Brown" },
+        { email: "kali@mail.com", username: "kali", firstName: "Kali", lastName: "Smith" },
+        { email: "jane@mail.com", username: "jane", firstName: "Jane", lastName: "Doe" },
+        { email: "john@mail.com", username: "john", firstName: "John", lastName: "Doe" },
+        { email: "mark@mail.com", username: "mark", firstName: "Mark", lastName: "Smith" },
+        { email: "jim@mail.com", username: "jim", firstName: "Jim", lastName: "Smith" },
+        { email: "joe@mail.com", username: "joe", firstName: "Joe", lastName: "Smith" },
+        { email: "mike@mail.com", username: "mike", firstName: "Mike", lastName: "Smith" },
+        { email: "sally@mail.com", username: "sally", firstName: "Sally", lastName: "Smith" },
+        { email: "sue@mail.com", username: "sue", firstName: "Sue", lastName: "Smith" },
+        { email: "tom@mail.com", username: "tom", firstName: "Tom", lastName: "Smith" },
+        { email: "tim@mail.com", username: "tim", firstName: "Tim", lastName: "Smith" },
     ];
 
-    const users = [];
+    const users: User[] = [];
 
     for (const userData of usersData) {
-        const user = await prisma.user.upsert({
-            where: { email: userData.email },
-            update: {},
-            create: {
+        const createdAt = getRandomDate(new Date(), new Date(Date.now() + 60 * 60 * 1000))
+        const updatedAt = new Date(createdAt.getTime() + getRandomDate(new Date(), new Date(Date.now() + 60 * 60 * 1000)).getTime());
+        // const deletedAt = getRandomBool() ? null : new Date(updatedAt.getTime() + getRandomDate(new Date(), new Date(Date.now() + 60 * 60 * 1000)).getTime());
+        const role = getRole() || "GUEST";
+
+        const user = await prisma.user.create({
+            data: {
                 username: userData.username ?? "user",
                 firstName: userData.firstName ?? "",
                 lastName: userData.lastName,
                 email: userData.email ?? "default@mail.com",
                 passwordHash: await hashPassword("password123"),
-                avatarUrl: `https://i.pravatar.cc/150?u=${userData.username}`,
-                role: userData.role,
+                role,
                 emailVerified: true,
-            },
+                failedAttempts: 0,
+                resetToken: getResetToken(),
+                resetTokenExpiry: getRandomDate(new Date(), new Date(Date.now() + 60 * 60 * 1000)),
+                lockedUntil: getRandomDate(new Date(), new Date(Date.now() + 60 * 60 * 1000)),
+                verificationToken: getResetToken(),
+                createdAt,
+                updatedAt,
+                deletedAt: null,
+            }
         });
 
-        users.push(user);
+        users.push({
+            ...user,
+            id: user.id.toString(),
+        });
     }
 
     console.log(`🌱 Created ${usersData.length} users successfully!`);
@@ -190,7 +265,7 @@ HTML Document
 Understanding the HTML document structure is the first step to becoming a web developer. A well-structured HTML page ensures better readability, maintainability, and SEO performance.  
 
 Next, you can explore **HTML Attributes and Elements** to enhance your knowledge! 🚀
-`, unlockPoints: 10, isLocked: true
+`, unlockxp: 10, isLocked: true
         },
         {
             title: "Text Formatting", description: "Learn how to style text using HTML elements.", content: `
@@ -282,7 +357,7 @@ Text formatting in HTML enhances the presentation of textual content. By underst
         { title: "Best Practices", description: "Follow coding standards and responsive design principles.", content: "Best practices in HTML involve clean code...", cost: 140, isLocked: true, category: "HTML", hasChallenge: true }
     ];
 
-    const tutorials = [];
+    const tutorials: Tutorial[] = [];
 
     for (const tutorialData of tutorialsData) {
         const tutorialDataToCreate = {
@@ -296,9 +371,13 @@ Text formatting in HTML enhances the presentation of textual content. By underst
             views: Math.floor(Math.random() * 100),
             category: tutorialData.category,
             hasChallenge: tutorialData?.hasChallenge ?? false,
-            difficulty: difficultyLevels[Math.floor(Math.random() * 3)],
+            difficulty: getRandomDifficulty(),
             createdAt: new Date(),
-            updatedAt: new Date()
+            updatedAt: new Date(),
+            status: getTutorialStatus(),
+            tutorialId: null,
+            deletedAt: null,
+            stepsId: null,
         };
 
         const tutorial = await prisma.tutorial.create({
@@ -308,8 +387,6 @@ Text formatting in HTML enhances the presentation of textual content. By underst
         tutorials.push(tutorial);
     }
 
-    console.log({ tutorials })
-
     for (let i = 0; i < tutorials.length - 1; i++) {
         await prisma.tutorial.update({
             where: { id: tutorials[i].id },
@@ -317,21 +394,46 @@ Text formatting in HTML enhances the presentation of textual content. By underst
         });
     }
 
-    console.log({ tutorials })
-
     console.log(`🌱 Created ${tutorials.length} tutorials successfully!`);
 
     const tutorialRecords = await prisma.tutorial.findMany();
 
+    /** SEED QUIZ TAGS */
+    console.log('🌱 Seeding tags...');
+
+    const tagsData = [
+        { name: "HTML", slug: "html" },
+        { name: "CSS", slug: "css" },
+        { name: "JavaScript", slug: "javascript" },
+        { name: "Web Development", slug: "web-development" },
+        { name: "Frontend", slug: "frontend" },
+        { name: "Backend", slug: "backend" },
+        { name: "Responsive Design", slug: "responsive-design" },
+        { name: "Accessibility", slug: "accessibility" },
+        { name: "SEO", slug: "seo" },
+        { name: "Performance", slug: "performance" }
+    ];
+
+    const tags: Tag[] = [];
+
+    for (const tagData of tagsData) {
+        const tag = await prisma.tag.create({
+            data: {
+                name: tagData.name,
+                slug: tagData.slug,
+            },
+        });
+
+        tags.push({ ...tag, id: tag.id.toString() });
+    }
+
+    console.log(`🌱 Created ${tags.length} tags successfully!`);
+
+    // const tagRecords = await prisma.tag.findMany();
+
     /** SEED QUIZZES **/
 
     console.log('🌱 Seeding quizzes...');
-
-    let isTimed = false;
-    const getIsTimed = () => {
-        isTimed = [true, false][Math.floor(Math.random() * 2)];
-        return isTimed
-    };
 
     const quizzesData = [
         { title: "Basics of HTML Quiz", tutorialId: tutorials[0].id },
@@ -352,28 +454,48 @@ Text formatting in HTML enhances the presentation of textual content. By underst
         { title: "Best Practices Quiz", tutorialId: tutorials[14].id }
     ];
 
-    const quizzes = [];
+    const quizzes: Quiz[] = [];
 
-    for (const quiz of quizzesData) {
+    for (let index = 0; index < quizzesData.length; index++) {
+        const quizData = quizzesData[index];
+        const isTimed = getRandomBool();
+        const timeLimit = isTimed ? getRandomTimeLimit() : null;
+        const estimatedDuration = isTimed ? timeLimit : 30;
+
+        const tutorialInfo = tutorialRecords.find((t: { id: string }) => t.id === quizData.tutorialId);
+
         const createdQuiz = await prisma.quiz.create({
             data: {
-                title: quiz.title,
-                isTimed: getIsTimed(),
-                timeLimit: isTimed ? [30, 60, 90, 120, 150, 180, 210, 240, 270, 300][Math.floor(Math.random() * 10)] : null,
-                tutorialId: quiz.tutorialId,
+                title: quizData.title,
+                slug: slugify(quizData.title, { lower: true }),
+                isTimed,
+                timeLimit,
+                tutorialId: quizData.tutorialId,
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 maxScore: 100,
                 passPercentage: 50,
-                difficulty: difficultyLevels[Math.floor(Math.random() * 3)]
-            }
+                difficulty: getRandomDifficulty(),
+                order: index + 1,
+                tutorialLocked: tutorialInfo?.isLocked ?? false,
+                questionCount: isTimed ? 5 : 10,
+                estimatedDuration,
+            },
         });
-        quizzes.push(createdQuiz);
+
+        quizzes.push({
+            ...createdQuiz,
+            id: createdQuiz.id.toString(),
+            tutorialId: createdQuiz.tutorialId.toString(),
+            deletedAt: null,
+            stepsId: null,
+        });
     }
 
     console.log(`🌱 Created ${quizzes.length} quizzes successfully!`);
 
     const quizRecords = await prisma.quiz.findMany();
+
 
     /** SEED QUIZ QUESTIONS **/
 
@@ -493,20 +615,35 @@ Text formatting in HTML enhances the presentation of textual content. By underst
         { quizId: quizRecords[14].id, questionText: "What is the recommended file size for images?", options: ["100KB", "200KB", "500KB", "1MB"], correctAnswer: "1MB" },
     ];
 
-    await prisma.quizQuestion.createMany({
-        data: quizRecords.flatMap((quiz, quizIndex) => {
-            const questionDataSlice = quizQuestionData.slice(quizIndex * 5, (quizIndex + 1) * 5);
-            return questionDataSlice.map((questionData) => ({
-                quizId: quiz.id,
-                questionText: questionData.questionText,
-                options: questionData.options,
-                correctAnswer: questionData.correctAnswer,
-                points: 5,
+    const quizQuestions: QuizQuestion[] = [];
+
+    for (const quizQuestion of quizQuestionData) {
+        const createQuizQuestion = await prisma.quizQuestion.upsert({
+            where: {
+                quizId_questionText: {
+                    quizId: quizQuestion.quizId,
+                    questionText: quizQuestion.questionText,
+                },
+            },
+            update: {},
+            create: {
+                quizId: quizQuestion.quizId,
+                questionText: quizQuestion.questionText,
+                options: quizQuestion.options,
+                correctAnswer: quizQuestion.correctAnswer,
+                xp: 5,
                 createdAt: new Date(),
                 updatedAt: new Date(),
-            }));
-        }),
-    });
+            },
+        });
+        quizQuestions.push({
+            ...createQuizQuestion,
+            id: createQuizQuestion.id.toString(),
+            quizId: createQuizQuestion.quizId.toString(),
+        });
+    }
+
+    console.log(`🌱 Created ${quizQuestions.length} quiz questions successfully!`);
 
     const quizQuestionRecords = await prisma.quizQuestion.findMany();
 
@@ -514,15 +651,34 @@ Text formatting in HTML enhances the presentation of textual content. By underst
 
     console.log('🌱 Seeding badges...');
 
-    const badges = await prisma.badge.createMany({
-        data: Array.from({ length: 10 }, (_unused, i) => ({
-            name: `Badge ${i + 1}`,
-            imageUrl: `https://dummyimage.com/100x100/${Math.floor(Math.random() * 16777215).toString(16)}/ffffff.png&text=Badge${i + 1}`,
-            pointsReq: (i + 1) * 100,
-        })),
-    });
+    const badgesData = Array.from({ length: 10 }, (_unused, i) => ({
+        name: `Badge ${i + 1}`,
+        imageUrl: `https://dummyimage.com/100x100/${Math.floor(Math.random() * 16777215).toString(16)}/ffffff.png&text=Badge${i + 1}`,
+        xpReq: (i + 1) * 100,
+    }));
 
-    console.log(`🌱 Created ${badges.count} badges successfully!`);
+    const badges: Badge[] = [];
+
+    for (const badgeData of badgesData) {
+        const createdBadge = await prisma.badge.create({
+            data: {
+                name: badgeData.name,
+                imageUrl: badgeData.imageUrl,
+                xpReq: badgeData.xpReq,
+                description: `Description for ${badgeData.name}`,
+                createdAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
+                updatedAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
+            },
+        });
+        badges.push({
+            ...createdBadge,
+            id: createdBadge.id.toString(),
+            createdAt: createdBadge.createdAt,
+            updatedAt: createdBadge.updatedAt,
+        });
+    }
+
+    console.log(`🌱 Created ${badges.length} badges successfully!`);
 
     const badgeRecords = await prisma.badge.findMany();
 
@@ -533,154 +689,248 @@ Text formatting in HTML enhances the presentation of textual content. By underst
     const userProfileData = [];
 
     for (let i = 0; i < userRecords.length; i++) {
+        const xp = Math.floor(Math.random() * 10_000);
+        const level = getLevelFromXP(xp);
+        const rank = getRankFromLevelXP(level, xp);
+
         userProfileData.push({
             userId: userRecords[i].id,
-            rank: i + 1,
-            points: Math.floor(Math.random() * 10_000),
-            coins: Math.floor(Math.random() * 10000),
+            bio: `I'm user ${i + 1}!`,
+            location: `Location ${i + 1}`,
+            website: `https://example${i + 1}.com`,
+            socialLinks: [`https://twitter.com/user${i + 1}`, `https://github.com/user${i + 1}`],
+            avatar: `https://i.pravatar.cc/150?u=${userRecords[i].username}`,
+            rank,
+            level,
+            xp,
+            levelProgress: Math.floor(Math.random() * level * 100),
+            levelProgressMax: level * 100,
             theme: themeOptions[Math.floor(Math.random() * themeOptions.length)],
+            lastLogin: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
             createdAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
             updatedAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
         });
     }
 
+    const userProfiles: UserProfile[] = [];
+
     for (const userProfile of userProfileData) {
-        await prisma.userProfile.create({
-            data: userProfile,
+        const createdUserProfile = await prisma.userProfile.upsert({
+            where: {
+                userId: userProfile.userId,
+            },
+            update: {},
+            create: {
+                userId: userProfile.userId,
+                bio: userProfile.bio,
+                location: userProfile.location,
+                website: userProfile.website,
+                socialLinks: userProfile.socialLinks,
+                avatar: userProfile.avatar,
+                level: userProfile.level,
+                levelProgress: userProfile.levelProgress,
+                levelProgressMax: userProfile.levelProgressMax,
+                xp: userProfile.xp,
+                rank: userProfile.rank,
+                theme: userProfile.theme,
+                createdAt: userProfile.createdAt,
+                updatedAt: userProfile.updatedAt,
+            },
         });
+        userProfiles.push({ ...createdUserProfile });
     }
 
-    console.log(`🌱 Created ${userProfileData.length} user profiles successfully!`);
+    console.log(`🌱 Created ${userProfiles.length} user profiles successfully!`);
 
-    // const userProfileRecords = await prisma.userProfile.findMany();
+    const userProfileRecords = await prisma.userProfile.findMany();
 
     console.log('🌱 Seeding transactions...');
 
-    const transactions = await prisma.coinTransaction.createMany({
-        data: Array.from({ length: 50 }, () => ({
-            userProfileId: userRecords[Math.floor(Math.random() * userRecords.length)].id,
-            amount: Math.floor(Math.random() * 100),
-            type: getRandomBool() ? "EARNED" : "SPENT",
-            description: 'Transaction description',
-            transactionAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
-            createdAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
-            updatedAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
-        })),
-    });
+    const transactionsData = Array.from({ length: 50 }, () => ({
+        profileId: userRecords[Math.floor(Math.random() * userRecords.length)].id,
+        amount: Math.floor(Math.random() * 100),
+        type: getTransactionType(),
+        description: 'Transaction description',
+        transactionAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
+        createdAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
+        updatedAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
+    }));
 
-    console.log(`🌱 Created ${transactions.count} transactions successfully!`);
+    const transactions: CoinTransaction[] = [];
+
+    for (const transactionData of transactionsData) {
+        const createdTransaction = await prisma.coinTransaction.upsert({
+            where: {
+                profileId_transactionAt: {
+                    profileId: transactionData.profileId,
+                    transactionAt: transactionData.transactionAt,
+                },
+            },
+            update: {},
+            create: {
+                profileId: transactionData.profileId,
+                amount: transactionData.amount,
+                type: transactionData.type,
+                description: transactionData.description,
+                transactionAt: transactionData.transactionAt,
+                createdAt: transactionData.createdAt,
+                updatedAt: transactionData.updatedAt,
+            },
+        });
+        transactions.push({ ...createdTransaction });
+    }
+    transactions.sort((a, b) => a.transactionAt.getTime() - b.transactionAt.getTime());
+
+    console.log(`🌱 Created ${transactions.length} transactions successfully!`);
 
     const transactionRecords = await prisma.coinTransaction.findMany();
 
     console.log('🌱 Seeding userBadges...');
 
-    const userBadgesData = Array.from({ length: 20 }, () => ({
-        userId: userRecords[Math.floor(Math.random() * userRecords.length)].id,
+    const userBadgesData = Array.from({ length: userProfileRecords.length }, (_, i) => ({
+        profileId: userProfileRecords[i].userId,
         badgeId: badgeRecords[Math.floor(Math.random() * badgeRecords.length)].id,
         earnedAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
         createdAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
         updatedAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
     }));
 
+    const userBadges: UserBadge[] = [];
+
     for (const userBadge of userBadgesData) {
-        await prisma.userBadge.upsert({
-            where: {
-                userId_badgeId: {
-                    userId: userBadge.userId,
-                    badgeId: userBadge.badgeId,
-                },
-            },
-            update: {},
-            create: userBadge,
-        })
+        const createUserBadge = await prisma.userBadge.create({
+            data: userBadge,
+        });
+
+        userBadges.push({ ...createUserBadge });
     }
 
     console.log(`🌱 Created ${userBadgesData.length} user badges successfully!`);
 
-    // const userBadgeRecords = await prisma.userBadge.findMany();
+    const userBadgeRecords = await prisma.userBadge.findMany();
 
     console.log('🌱 Seeding streaks...');
 
     const streaksData = Array.from({ length: userRecords.length }, (_, i) => ({
-        userId: userRecords[i].id,
-        streakCount: Math.floor(Math.random() * 10),
-        // longestStreak: Math.floor(Math.random() * 10),
+        profileId: userRecords[i].id,
+        streak: Math.floor(Math.random() * 100),
+        streakDays: Math.floor(Math.random() * 30),
         lastLogin: new Date(Date.now() - 1),
+        currentStart: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
+        currentEnd: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
+        longestStreak: Math.floor(Math.random() * 100),
+        longestStart: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
+        longestEnd: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
+        createdAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
+        updatedAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
     }));
 
+    const streaks: UserStreak[] = [];
+
     for (const streak of streaksData) {
-        await prisma.userStreak.upsert({
-            where: {
-                userId: streak.userId,
-            },
-            update: {},
-            create: streak,
-        })
+        const createStreak = await prisma.userStreak.create({
+            data: streak,
+        });
+
+        streaks.push({ ...createStreak });
     }
 
     console.log(`🌱 Created ${streaksData.length} streaks successfully!`);
 
-    // const streakRecords = await prisma.userStreak.findMany();
+    const streakRecords = await prisma.userStreak.findMany();
+
+    /** SEED COIN WALLET **/
+
+    console.log('🌱 Seeding coin wallets...');
+
+    const coinWalletsData = Array.from({ length: userProfileRecords.length }, (_, i) => ({
+        profileId: userProfileRecords[i].userId,
+        coins: Math.floor(Math.random() * 1000),
+        createdAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
+        updatedAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
+    }));
+
+    const coinWallets: CoinWallet[] = [];
+
+    for (const coinWallet of coinWalletsData) {
+        const createCoinWallet = await prisma.coinWallet.create({
+            data: coinWallet,
+        });
+
+        coinWallets.push({ ...createCoinWallet });
+    }
+
+    console.log(`🌱 Created ${coinWallets.length} coin wallets successfully!`);
+
+    const coinWalletRecords = await prisma.coinWallet.findMany();
 
     /** SEED QUIZ ATTEMPTS**/
 
     console.log('🌱 Seeding quiz attempts...');
 
-    let attemptQuizId = quizRecords[Math.floor(Math.random() * quizRecords.length)].id;
-    const getQuizId = () => {
-        attemptQuizId = quizRecords.filter(q => q.tutorialId === tutorialRecords[0].id)[Math.floor(Math.random() * quizRecords.filter(q => q.tutorialId === tutorialRecords[0].id).length)].id;
-        return attemptQuizId;
-    }
+    const quizAttemptsData: UserQuizAttempt[] = [];
 
-    const getStartedAt = () => getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31));
-
-    const getScoreBasedOnDifficulty = (difficulty: string) => {
-        switch (difficulty) {
-            case "EASY":
-                return Math.floor(Math.random() * (100 - 60) + 60); // 60-100
-            case "MEDIUM":
-                return Math.floor(Math.random() * (90 - 40) + 40); // 40-90
-            case "HARD":
-                return Math.floor(Math.random() * (80 - 20) + 20); // 20-80
-            default:
-                return Math.floor(Math.random() * 100);
-        }
-    };
-
-    const quizAttemptsData = Array.from({
-        length: quizRecords.filter(q => q.tutorialId === tutorialRecords[0].id).length * userRecords.length * 2
-    }, () => {
-        const quizId = getQuizId();
-        const startedAt = getStartedAt();
-        const quizRecord = quizRecords.find(q => q.id === quizId);
+    for (let i = 0; i < quizRecords.filter((q: { tutorialId: string }) => q.tutorialId === tutorialRecords[Math.floor(Math.random() * tutorialRecords.length)].id).length * userProfileRecords.length * 2; i++) {
+        const quizId = getQuizId(quizRecords, tutorialRecords);
+        const startedAt = getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31));
+        const quizRecord = quizRecords.find((q: { id: string }) => q.id === quizId);
+        const score = getScoreBasedOnDifficulty(quizRecord?.difficulty || "EASY");
 
         const completedAt = quizRecord?.timeLimit
             ? new Date(startedAt.getTime() + quizRecord.timeLimit * 60 * 1000)
             : startedAt;
 
-        return ({
-            userId: userRecords[Math.floor(Math.random() * users.length)].id,
+        quizAttemptsData.push({
+            id: crypto.randomUUID(),
+            profileId: getUniqueUserId(userProfileRecords, quizAttemptsData) || "default-user-id",
             quizId,
             startedAt,
             completedAt,
-            score: getScoreBasedOnDifficulty(quizRecord?.difficulty || "EASY"),
-        })
-    });
+            score,
+            createdAt: startedAt,
+            updatedAt: startedAt,
+            isPassed: score >= 50,
+            feedback: null,
+        });
+    }
 
-    await prisma.userQuizAttempt.createMany({
-        data: quizAttemptsData,
-    });
+    const quizAttempts: UserQuizAttempt[] = [];
+    for (const quizAttempt of quizAttemptsData) {
+        const createQuizAttempt = await prisma.userQuizAttempt.create({
+            data: {
+                profileId: quizAttempt.profileId,
+                quizId: quizAttempt.quizId,
+                startedAt: quizAttempt.startedAt,
+                completedAt: quizAttempt.completedAt,
+                score: quizAttempt.score,
+                createdAt: quizAttempt.startedAt,
+                updatedAt: quizAttempt.startedAt,
+            },
+        });
+        createQuizAttempt && quizAttempts.push({
+            ...createQuizAttempt,
+            id: createQuizAttempt.id.toString(),
+            profileId: createQuizAttempt.profileId.toString(),
+            quizId: createQuizAttempt.quizId.toString(),
+            startedAt: createQuizAttempt.startedAt,
+            completedAt: createQuizAttempt.completedAt,
+            score: createQuizAttempt.score,
+            createdAt: createQuizAttempt.createdAt,
+            updatedAt: createQuizAttempt.updatedAt,
+        });
+    }
+
+    quizAttempts.sort((a, b) => a.startedAt.getTime() - b.startedAt.getTime());
 
     console.log(`🌱 Created ${quizAttemptsData.length} quiz attempts successfully!`);
 
     const quizAttemptRecords = await prisma.userQuizAttempt.findMany();
 
-    /** User Question Attempt **/
+    /** SEED QUESTION ATTEMPTS **/
 
     console.log('🌱 Seeding question attempts...');
 
-    const questionAttemptsData: Partial<UserQuestionAttempt>[] = [];
-
+    const questionAttemptsData = [];
     for (const quizAttempt of quizAttemptRecords) {
         for (const question of quizQuestionRecords) {
             const selectedAnswer = selectedOption(question.id, { options: question.options });
@@ -689,15 +939,14 @@ Text formatting in HTML enhances the presentation of textual content. By underst
                 questionId: question.id,
                 selectedOption: selectedAnswer,
                 isCorrect: selectedAnswer === question.correctAnswer,
-                pointsEarned: selectedAnswer === question.correctAnswer ? question.points : 0,
+                xpEarned: selectedAnswer === question.correctAnswer ? question.xp : 0,
                 createdAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
                 updatedAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
-            } as UserQuestionAttempt);
+            });
         }
     }
 
-    const questionAttempts = [];
-
+    const questionAttempts: UserQuestionAttempt[] = [];
     for (const questionAttempt of questionAttemptsData) {
         const createQuestionAttempt = await prisma.userQuestionAttempt.create({
             data: {
@@ -705,7 +954,7 @@ Text formatting in HTML enhances the presentation of textual content. By underst
                 questionId: questionAttempt.questionId!,
                 selectedOption: questionAttempt.selectedOption!,
                 isCorrect: questionAttempt.isCorrect!,
-                pointsEarned: questionAttempt.pointsEarned!,
+                xpEarned: questionAttempt.xpEarned!,
                 createdAt: questionAttempt.createdAt!,
                 updatedAt: questionAttempt.updatedAt!,
             },
@@ -715,88 +964,42 @@ Text formatting in HTML enhances the presentation of textual content. By underst
 
     console.log(`🌱 Created ${questionAttempts.length} question attempts successfully!`);
 
+    const questionAttemptRecords = await prisma.userQuestionAttempt.findMany();
+
     /** User Progress **/
 
     console.log('🌱 Seeding userProgress...');
 
-    let userId = userRecords[Math.floor(Math.random() * userRecords.length)].id;
-    const getUserId = () => {
-        userId = userRecords[Math.floor(Math.random() * userRecords.length)].id;
-        return userId;
-    }
-
-    const getTotalQuizAttemptsByUserAndTutorial = (userId: number, tutorialId: number) => {
-        // Get all quizzes that belong to the tutorial
-        const tutorialQuizzes = quizRecords.filter(q => q.tutorialId === tutorialId).map(q => q.id);
-
-        // Filter quiz attempts where the user attempted a quiz from this tutorial
-        return quizAttemptRecords.filter(q => q.userId === userId && tutorialQuizzes.includes(q.quizId)).length;
-    };
-
-
-    const getBestScoreByUserIdAndTutorialId = (userId: number, tutorialId: number) => {
-        // Get all quizzes associated with the tutorial
-        const tutorialQuizzes = quizRecords.filter(q => q.tutorialId === tutorialId).map(q => q.id);
-
-        // Get all attempts where the user attempted a quiz from this tutorial
-        const userAttempts = quizAttemptRecords.filter(q => q.userId === userId && tutorialQuizzes.includes(q.quizId));
-
-        // If there are no attempts, return 0
-        if (userAttempts.length === 0) return 0;
-
-        // Return the highest score from those attempts
-        return Math.max(...userAttempts.map(q => q.score));
-    };
-
-
-    const getPercentageCompleted = (userId: number, tutorialId: number) => {
-        const tutorialQuizzes = quizRecords.filter(q => q.tutorialId === tutorialId);
-        const completedQuizzes = quizAttemptRecords.filter(q => q.userId === userId && tutorialQuizzes.some(tq => tq.id === q.quizId));
-
-        return tutorialQuizzes.length > 0 ? Math.round((completedQuizzes.length / tutorialQuizzes.length) * 100) : 0;
-    };
-
-    const getIsCompleted = (percentageCompleted: number) => percentageCompleted === 100;
-
-    const userProgressData: Partial<UserProgress>[] = Array.from({ length: 10 }, (_, i) => {
-        const userId = getUserId();
+    const userProgressData = Array.from({ length: 10 }, (_, i) => {
+        const profileId = getUserId(userProfileRecords);
         const tutorialId = tutorialRecords[i].id;
-        const percentageCompleted = getPercentageCompleted(userId, tutorialId);
+        const percentageCompleted = getPercentageCompleted(profileId, tutorialId, quizRecords, quizAttemptRecords);
+        const isCompleted = getIsCompleted(percentageCompleted);
+        const attempts = getTotalQuizAttemptsByUserAndTutorial(profileId, tutorialId, quizRecords, quizAttemptRecords);
+        const bestScore = getBestScoreByUserIdAndTutorialId(profileId, tutorialId, quizRecords, quizAttemptRecords);
+        const date = getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31));
 
         return ({
-            userId: getUserId(),
-            tutorialId: tutorialRecords[i].id,
-            isCompleted: getIsCompleted(percentageCompleted),
-            attempts: getTotalQuizAttemptsByUserAndTutorial(userId, tutorialId),
-            bestScore: getBestScoreByUserIdAndTutorialId(userId, tutorialId),
+            profileId,
+            tutorialId,
+            isCompleted,
+            attempts,
+            bestScore,
             percentageCompleted,
             interviewCompleted: false,
             challengeCompleted: false,
-            completedAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
-            createdAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
-            updatedAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
-        } as unknown as UserProgress)
+            completedAt: date,
+            createdAt: date,
+            updatedAt: new Date(date.getTime() + date.getTime()),
+        })
     });
 
+    const usersProgress: UserProgress[] = [];
+
     for (const userProgress of userProgressData) {
-        await prisma.userProgress.upsert({
-            where: {
-                userId_tutorialId: {
-                    userId: userProgress.userId!,
-                    tutorialId: userProgress.tutorialId!,
-                },
-            },
-            update: {
-                isCompleted: userProgress.isCompleted,
-                attempts: userProgress.attempts,
-                bestScore: userProgress.bestScore,
-                percentageCompleted: userProgress.percentageCompleted,
-                interviewCompleted: userProgress.interviewCompleted,
-                challengeCompleted: userProgress.challengeCompleted,
-                completedAt: userProgress.completedAt,
-            },
-            create: {
-                userId: userProgress.userId!,
+        const createProgress = await prisma.userProgress.create({
+            data: {
+                profileId: userProgress.profileId!,
                 tutorialId: userProgress.tutorialId!,
                 isCompleted: userProgress.isCompleted,
                 attempts: userProgress.attempts,
@@ -806,78 +1009,286 @@ Text formatting in HTML enhances the presentation of textual content. By underst
                 challengeCompleted: userProgress.challengeCompleted,
                 completedAt: userProgress.completedAt,
             },
-        })
+        });
+        usersProgress.push({
+            ...createProgress,
+            profileId: createProgress.profileId.toString(),
+            tutorialId: createProgress.tutorialId.toString(),
+            isCompleted: createProgress.isCompleted,
+            attempts: createProgress.attempts,
+            bestScore: createProgress.bestScore,
+            percentageCompleted: createProgress.percentageCompleted,
+            interviewCompleted: createProgress.interviewCompleted,
+            challengeCompleted: createProgress.challengeCompleted,
+            completedAt: createProgress.completedAt,
+        });
     }
 
     console.log(`🌱 Created ${userProgressData.length} user progress successfully!`);
 
-    // const userProgressRecords = await prisma.userProgress.findMany();
+    const userProgressRecords = await prisma.userProgress.findMany();
+
+    /** Roadmap **/
+    console.log('🌱 Seeding roadmaps...');
+
+    const roadmapData = [
+        { title: 'MERN Stack', description: 'A comprehensive roadmap for web development.', createdAt: new Date(), updatedAt: new Date(), type: RoadmapType.FRONTEND, category: 'Web Development' },
+        { title: 'Data Science Roadmap', description: 'A roadmap for aspiring data scientists.', createdAt: new Date(), updatedAt: new Date() },
+        { title: 'Machine Learning Roadmap', description: 'A roadmap for machine learning enthusiasts.', createdAt: new Date(), updatedAt: new Date() },
+        { title: 'Mobile Development Roadmap', description: 'A roadmap for mobile app developers.', createdAt: new Date(), updatedAt: new Date() },
+    ];
+
+    const roadmaps: Roadmap[] = [];
+    for (const roadmap of roadmapData) {
+        const createRoadmap = await prisma.roadmap.create({
+            data: {
+                title: roadmap.title,
+                description: roadmap.description,
+                createdAt: roadmap.createdAt,
+                updatedAt: roadmap.updatedAt,
+                type: getRoadmapType() || roadmap.type,
+                category: ['Web Development', 'Data Science', 'Machine Learning', 'Mobile Development'][getRandomInt(0, 3)],
+                createdById: userRecords[Math.floor(Math.random() * userRecords.length)].id,
+            },
+        });
+        roadmaps.push(createRoadmap);
+    }
+
+    console.log(`🌱 Created ${roadmaps.length} roadmaps successfully!`);
+    const roadmapRecords = await prisma.roadmap.findMany();
+
+    /** Roadmap Steps **/
+    console.log('🌱 Seeding roadmap steps...');
+
+    await prisma.roadmapStep.deleteMany();
+
+    const roadmapSteps: RoadmapStep[] = [];
+
+    roadmapSteps.push(
+        await prisma.roadmapStep.create({
+            data: {
+                title: 'HTML',
+                description: 'Learn the basics of HTML.',
+                status: StepStatus.COMPLETED,
+                roadmapId: roadmaps[0].id,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                order: 1,
+                progress: 100,
+                completed: getRandomBool(),
+                completedAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
+                parentId: null,
+            },
+        }),
+    );
+
+    roadmapSteps.push(
+        await prisma.roadmapStep.create({
+            data: {
+                title: 'CSS',
+                description: 'Understand the fundamentals of CSS.',
+                roadmapId: roadmaps[0].id,
+                status: StepStatus.IN_PROGRESS,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                order: 2,
+                progress: getRandomBool() ? 100 : 0,
+                completed: getRandomBool(),
+                completedAt: getRandomBool() ? getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)) : null,
+                parentId: roadmapSteps[0].id,
+            },
+        }),
+    );
+
+    roadmapSteps.push(
+        await prisma.roadmapStep.create({
+            data: {
+                title: 'JavaScript',
+                description: 'Master the essentials of JavaScript.',
+                roadmapId: roadmaps[0].id,
+                status: StepStatus.IN_PROGRESS,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                order: 3,
+                progress: getRandomBool() ? 100 : 0,
+                completed: getRandomBool(),
+                completedAt: getRandomBool() ? getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)) : null,
+                parentId: roadmapSteps[0].id,
+            },
+        }),
+    );
+
+    // roadmapSteps[0] = await prisma.roadmapStep.update({
+    //     where: { id: roadmapSteps[0].id },
+    //     data: {
+    //         children: {
+    //             connect: [
+    //                 { id: roadmapSteps[1].id },
+    //                 { id: roadmapSteps[2].id },
+    //             ],
+    //         },
+    //     },
+    // });
+
+    roadmapSteps.push(
+        await prisma.roadmapStep.create({
+            data: {
+                title: "Tailwind CSS",
+                description: "Learn the basics of Tailwind CSS.",
+                roadmapId: roadmaps[0].id,
+                status: StepStatus.NOT_STARTED,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                order: 1,
+                progress: getRandomBool() ? 100 : 0,
+                completed: getRandomBool(),
+                completedAt: getRandomBool() ? getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)) : null,
+                parentId: roadmapSteps[1].id,
+            }
+        })
+    )
+
+    roadmapSteps.push(
+        await prisma.roadmapStep.create({
+            data: {
+                title: 'React',
+                description: 'Get introduced to React.',
+                roadmapId: roadmaps[0].id,
+                status: StepStatus.NOT_STARTED,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                order: 4,
+                progress: getRandomBool() ? 100 : 0,
+                completed: getRandomBool(),
+                completedAt: getRandomBool() ? getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)) : null,
+                parentId: roadmapSteps[0].id,
+            }
+        })
+    )
+
+    roadmapSteps.push(
+        await prisma.roadmapStep.create({
+            data: {
+                title: 'Node.js',
+                description: 'Learn the basics of Node.js.',
+                roadmapId: roadmaps[0].id,
+                status: StepStatus.NOT_STARTED,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                order: 5,
+                progress: getRandomBool() ? 100 : 0,
+                completed: getRandomBool(),
+                completedAt: getRandomBool() ? getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)) : null,
+                parentId: roadmapSteps[0].id,
+            }
+        })
+    )
+
+    console.log(`🌱 Created ${roadmapSteps.length} roadmap steps successfully!`);
+
+    // const roadmapStepData = [
+    //     { title: 'HTML Basics', description: 'Learn the basics of HTML.',  status: StepStatus.COMPLETED, roadmapId: roadmaps[0].id, createdAt: new Date(), updatedAt: new Date(), order: 1, progress: 100, completed: getRandomBool(), completedAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)), parentId: null, parent: null },
+    //     { title: 'CSS Fundamentals', description: 'Understand the fundamentals of CSS.', roadmapId: roadmaps[0].id, createdAt: new Date(), updatedAt: new Date(), order: 2 },
+    //     { title: 'JavaScript Essentials', description: 'Master the essentials of JavaScript.', roadmapId: roadmaps[0].id, createdAt: new Date(), updatedAt: new Date(), order: 3 },
+    //     { title: 'React Introduction', description: 'Get introduced to React.', roadmapId: roadmaps[0].id, createdAt: new Date(), updatedAt: new Date(), order: 4 },
+    //     { title: 'Node.js Basics', description: 'Learn the basics of Node.js.', roadmapId: roadmaps[0].id, createdAt: new Date(), updatedAt: new Date(), order: 5 },
+    // ];
+
+    // const roadmapSteps: RoadmapStep[] = [];
+    // for (const roadmapStep of roadmapStepData) {
+    //     const createRoadmapStep = await prisma.roadmapStep.create({
+    //         data: {
+    //             title: roadmapStep.title,
+    //             description: roadmapStep.description,
+    //             roadmapId: roadmapStep.roadmapId,
+    //             order: roadmapStep.order,
+    //             createdAt: roadmapStep.createdAt,
+    //             updatedAt: roadmapStep.updatedAt,
+    //         },
+    //     });
+    //     roadmapSteps.push(createRoadmapStep);
+    // }
+
+    // console.log(`🌱 Created ${roadmapSteps.length} roadmap steps successfully!`);
+    // const roadmapStepRecords = await prisma.roadmapStep.findMany();
 
     /** Recent Activity **/
 
-    console.log('🌱 Seeding recent activities...');
+    // console.log('🌱 Seeding recent activities...');
 
-    let type = "";
+    let type = getActivityType();
     let value = 0;
 
-    const getType = () => {
-        type = ["quiz_completed", "badge_unlocked", "transaction", "tutorial_completed", "xp_earned", "coins_earned", "level_unlocked"][Math.floor(Math.random() * 7)];
-        return type;
-    }
-
     const getValue = () => {
-        if (type === "quiz_completed") {
+        if (type === ActivityType.QUIZ) {
             value = Math.floor(Math.random() * 100);
-        } else if (type === "badge_unlocked") {
+        } else if (type === ActivityType.BADGE) {
             value = Math.floor(Math.random() * 100);
-        } else if (type === "transaction") {
+        } else if (type === ActivityType.TRANSACTION) {
             value = Math.floor(Math.random() * 100);
-        } else if (type === "tutorial_completed") {
+        } else if (type === ActivityType.TUTORIAL) {
             value = Math.floor(Math.random() * 100);
-        } else if (type === "xp_earned") {
+        } else if (type === ActivityType.XP) {
             value = Math.floor(Math.random() * 100);
-        } else if (type === "coins_earned") {
+        } else if (type === ActivityType.COINS) {
             value = Math.floor(Math.random() * 100);
-        } else if (type === "level_unlocked") {
+        } else if (type === ActivityType.LEVEL) {
             value = Math.floor(Math.random() * 10);
         }
         return value;
     }
 
     const getDescription = () => {
-        if (type === "quiz_completed") {
+        if (type === ActivityType.QUIZ) {
             return quizRecords[Math.floor(Math.random() * quizRecords.length)].title;
-        } else if (type === "badge_unlocked") {
+        } else if (type === ActivityType.BADGE) {
             return badgeRecords[Math.floor(Math.random() * badgeRecords.length)].name;
-        } else if (type === "transaction") {
+        } else if (type === ActivityType.TRANSACTION) {
             return transactionRecords[Math.floor(Math.random() * transactionRecords.length)].description;
-        } else if (type === "tutorial_completed") {
+        } else if (type === ActivityType.TUTORIAL) {
             return tutorialRecords[Math.floor(Math.random() * tutorialRecords.length)].title;
-        } else if (type === "xp_earned") {
+        } else if (type === ActivityType.XP) {
             return `Earned ${value} XP`;
-        } else if (type === "coins_earned") {
+        } else if (type === ActivityType.COINS) {
             return `Earned ${value} Coins`;
-        } else if (type === "level_unlocked") {
+        } else if (type === ActivityType.LEVEL) {
             return `Unlocked Level ${value}`
         }
     }
 
-    const recentActivities = await prisma.recentActivity.createMany({
-        data: Array.from({ length: 10 }, () => ({
-            userId: userRecords[Math.floor(Math.random() * userRecords.length)].id,
-            type: getType(),
-            referenceId: [quizRecords[Math.floor(Math.random() * quizRecords.length)].id, badgeRecords[Math.floor(Math.random() * badgeRecords.length)].id, transactionRecords[Math.floor(Math.random() * transactionRecords.length)].id, tutorialRecords[Math.floor(Math.random() * tutorialRecords.length)].id][Math.floor(Math.random() * 4)],
-            value: getValue(),
-            description: getDescription(),
-            createdAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31))
-        })),
-    });
+    console.log(`🌱 Seeding last activities...`);
 
-    console.log(`🌱 Created ${recentActivities.count} recent activities successfully!`);
+    const lastActivitiesData = Array.from({ length: 10 }, () => ({
+        userId: userRecords[Math.floor(Math.random() * userRecords.length)].id,
+        type: getActivityType(),
+        xpAwarded: getValue(),
+        description: getDescription(),
+        createdAt: getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31))
+    }));
+
+    const lastActivities: LastActivity[] = [];
+    for (const activity of lastActivitiesData) {
+        const createActivity = await prisma.lastActivity.create({
+            data: {
+                userId: activity.userId,
+                type: activity.type,
+                xpAwarded: activity.xpAwarded,
+                description: activity.description,
+                createdAt: activity.createdAt,
+            },
+        });
+        lastActivities.push({ ...createActivity });
+    }
+
+    console.log(`🌱 Created ${lastActivities.length} last activities successfully!`);
+
+    /** SEEDING COMPLETED **/
 
     console.log('✅ Database seeding completed successfully!');
 }
-/******  0b3f36be-3826-48aa-801e-02c2069ab5e7  *******/
+
+
+
 main()
     .catch(error => {
         console.error('❌ Seeding failed:', error);
@@ -886,3 +1297,27 @@ main()
     .finally(async () => {
         await prisma.$disconnect();
     });
+
+
+
+function getRandomInt(arg0: number, arg1: number) {
+    return Math.floor(Math.random() * (arg1 - arg0 + 1)) + arg0;
+}
+
+function getUniqueUserId(userProfileRecords: UserProfile[], quizAttemptsData: UserQuizAttempt[]) {
+    const userIds = userProfileRecords.map((profile) => profile.userId);
+    const randomIndex = Math.floor(Math.random() * userIds.length);
+
+    quizAttemptsData.forEach((quizAttempt) => {
+        if (quizAttempt.profileId === userIds[randomIndex]) {
+            userIds.splice(randomIndex, 1);
+        }
+    });
+
+    if (userIds.length === 0) {
+        return null;
+    }
+
+    return userIds[randomIndex];
+}
+

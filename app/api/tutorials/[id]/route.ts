@@ -6,14 +6,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         const { id } = await params;
 
         if (!id) {
-            return NextResponse.json(
-                { error: 'id is required.' },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: 'id is required.' }, { status: 400 });
         }
 
         const tutorial = await prisma.tutorial.findUnique({
-            where: { id: Number(id) },
+            where: { id },
             include: { quizzes: { include: { questions: true, attempts: true } }, progress: true },
         });
 

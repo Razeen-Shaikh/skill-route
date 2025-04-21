@@ -7,31 +7,40 @@ import { useSession } from "next-auth/react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Coins } from "lucide-react";
-import { Tutorial } from "@/lib/interface";
 import TutorialCard from "./TutorialCard";
+import { Tutorial } from "@/lib/interfaces";
 
+/**
+ * The sidebar component for the tutorial page. It shows a list of all the
+ * tutorials and the user's current progress. The user can click on a tutorial
+ * to view its content.
+ *
+ * @returns The sidebar component as a JSX element.
+ */
 export default function Sidebar() {
   const { id } = useParams();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const userId = session?.user?.id;
+  const isAuthenticated = status === "authenticated" && userId;
 
   const { data: tutorials, isLoading: loadingTutorials } = useQuery({
     queryKey: ["tutorials"],
     queryFn: fetchTutorials,
+    refetchOnWindowFocus: false,
   });
 
   const { data: progress } = useQuery({
     queryKey: ["progress", userId, id],
-    queryFn: () => fetchUserProgress(userId, Number(id)),
-    enabled: !!id && !!userId,
+    queryFn: () => fetchUserProgress(userId!, Array.isArray(id) ? id[0] : id!),
+    enabled: !!id && !!isAuthenticated,
+    refetchOnWindowFocus: false,
   });
 
-  const { data: userCoins, isLoading: loadingCoins } = useQuery<{
-    coins: number;
-  }>({
+  const { data: userCoins, isLoading: loadingCoins } = useQuery({
     queryKey: ["userCoins", userId],
-    queryFn: () => fetchUserCoins(userId),
-    enabled: !!userId,
+    queryFn: () => fetchUserCoins(userId!),
+    enabled: !!isAuthenticated,
+    refetchOnWindowFocus: false,
   });
 
   return (

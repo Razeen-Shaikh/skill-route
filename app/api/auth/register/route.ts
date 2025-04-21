@@ -21,6 +21,7 @@ export async function POST(req: Request) {
             data: {
                 username,
                 email,
+                firstName: username,
                 passwordHash: hashedPassword,
                 verificationToken,
                 profile: { create: {} },

@@ -19,12 +19,12 @@ export async function POST(req: Request) {
         }
 
         // If last login is today, no update needed
-        if (isSameDay(today, userStreak.lastLogin)) {
+        if (userStreak.lastLogin && isSameDay(today, userStreak.lastLogin)) {
             return NextResponse.json({ streak: userStreak.streakCount, message: "Already logged in today!" });
         }
 
         // If last login was yesterday, continue streak
-        if (isSameDay(userStreak.lastLogin, subDays(today, 1))) {
+        if (userStreak.lastLogin && isSameDay(userStreak.lastLogin, subDays(today, 1))) {
             await prisma.userStreak.update({
                 where: { userId },
                 data: { streakCount: userStreak.streakCount + 1, lastLogin: today }
@@ -38,8 +38,7 @@ export async function POST(req: Request) {
             data: { streakCount: 1, lastLogin: today }
         });
         return NextResponse.json({ streak: 1, message: "Streak reset!" });
-
-    } catch (error) {
+    } catch {
         return NextResponse.json({ error: "Failed to update streak" }, { status: 500 });
     }
 }

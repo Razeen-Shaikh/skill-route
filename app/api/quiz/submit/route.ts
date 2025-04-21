@@ -33,28 +33,24 @@ export async function POST(request: NextRequest) {
             where: { id: { in: questionIds } },
         });
 
-        console.log('questions', questions);
-
         // Map questionId to correct answers for quick lookup
         const correctAnswersMap = new Map(
             questions.map((q) => [q.id, q.correctAnswer])
         );
 
-        console.log('correctAnswersMap', correctAnswersMap);
-
         let totalScore = 0;
         const userQuestionAttempts = attempts.map(({ questionId, selectedOption }) => {
             const correctAnswer = correctAnswersMap.get(questionId);
             const isCorrect = selectedOption === correctAnswer;
-            const pointsEarned = isCorrect ? 1 : 0;
+            const xpEarned = isCorrect ? 2 : 0;
 
-            if (isCorrect) { totalScore += pointsEarned; }
+            if (isCorrect) { totalScore += xpEarned; }
 
             return {
                 questionId,
                 selectedOption,
                 isCorrect,
-                pointsEarned,
+                xpEarned,
             };
         });
 
@@ -65,8 +61,8 @@ export async function POST(request: NextRequest) {
             // Create UserQuizAttempt
             const userQuizAttempt = await tx.userQuizAttempt.create({
                 data: {
-                    userId: parseInt(userId),
-                    quizId: parseInt(quizId),
+                    profileId: userId,
+                    quizId,
                     startedAt: new Date(),
                     completedAt: new Date(),
                 },

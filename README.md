@@ -61,6 +61,11 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+### Login with Email and Password
+
+email: alice@mail.com
+password: password123
+
 ### Close Docker
 
 ```bash

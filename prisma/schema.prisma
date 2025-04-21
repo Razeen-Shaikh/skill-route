@@ -35,7 +35,14 @@ enum RoadmapType {
   FULLSTACK
   DATA_SCIENCE
   MOBILE
-  ML
+  MACHINE_LEARNING
+  MERN
+  MEAN
+  BLOCKCHAIN
+  CYBER_SECURITY
+  GAMING
+  CLOUD
+  SOFTWARE_TESTING
 }
 
 enum StepStatus {
@@ -61,6 +68,7 @@ enum TransactionType {
   PENALTY
   REWARD
   SPENT
+  ALL
 }
 
 enum TutorialStatus {
@@ -89,7 +97,6 @@ model User {
   lastName          String?
   email             String    @unique
   passwordHash      String?
-  avatarUrl         String?
   role              UserRole  @default(USER)
   failedAttempts    Int       @default(0)
   lockedUntil       DateTime?
@@ -102,77 +109,196 @@ model User {
   deletedAt         DateTime?
 
   profile           UserProfile?
-  progress          UserProgress[]
-  quizAttempts      UserQuizAttempt[]
-  userBadges        UserBadge[]
-  streaks           UserStreak?
   roadmaps          Roadmap[]
   roadmapProgress   RoadmapProgress[]
-  lastActivities    LastActivity[]
-  coinWallet        CoinWallet?
   adminActivityLogs AdminActivityLog[]
 
   @@map("users")
 }
 
 model UserProfile {
-  userId            String    @id @map("user_id")
-  bio               String?
-  location          String?
-  website           String?
-  socialLinks       String[]
-  profilePictureUrl String?
-  rank              String    @default("Beginner")
-  level             Int       @default(1)
-  xp                Int       @default(0)
-  points            Int       @default(0)
-  theme             ThemeName @default(LIGHT)
-  levelProgress     Int       @default(0)
-  levelProgressMax  Int       @default(100)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @default(now()) @updatedAt
-  deletedAt         DateTime?
-  lastLogin         DateTime?
+  userId              String    @id @map("user_id")
+  bio                 String?
+  location            String?
+  website             String?
+  socialLinks         String[]
+  avatar              String?
+  rank                String    @default("Beginner")
+  level               Int       @default(1)
+  xp                  Int       @default(0)
+  theme               ThemeName @default(LIGHT)
+  levelProgress       Int       @default(0)
+  levelProgressMax    Int       @default(100)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @default(now()) @updatedAt
+  deletedAt           DateTime?
+  lastLogin           DateTime?
+  completedQuizzes    String[]
+  completedTutorials  String[]
+  completedRoadmaps   String[]
+  completedSteps      String[]
+  completedChallenges String[]
+  completedInterviews String[]
+  completedProjects   String[]
 
+  coinWallet      CoinWallet?
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   coinTransaction CoinTransaction[]
-  lastActivityId  String?
-  lastActivity    LastActivity?     @relation(fields: [lastActivityId], references: [id], onDelete: Cascade)
+  lastActivities  LastActivity[]
+  progress        UserProgress[]
+  quizAttempts    UserQuizAttempt[]
+  userBadges      UserBadge[]
+  streaks         UserStreak?
 
   @@map("users_profile")
 }
 
-model UserStreak {
-  userId               String    @id @map("user_id")
-  streak               Int       @default(0)
-  streakDays           Int       @default(0)
-  streakStart          DateTime?
-  streakEnd            DateTime?
-  streakLast           DateTime?
-  streakCurrent        DateTime?
-  streakLongest        Int       @default(0)
-  streakLongestStart   DateTime?
-  streakLongestEnd     DateTime?
-  streakLongestCount   Int       @default(0)
-  streakLongestCurrent DateTime?
-  streakLongestLast    DateTime?
-  lastLogin            DateTime?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @default(now()) @updatedAt
+model UserProgress {
+  tutorialId          String
+  bestAttemptId       String?
+  lastAttemptId       String?
+  userQuizAttemptId   String?
+  isCompleted         Boolean   @default(false)
+  completedAt         DateTime?
+  attempts            Int       @default(0)
+  bestScore           Int       @default(0)
+  percentageCompleted Int       @default(0)
+  interviewCompleted  Boolean   @default(false)
+  challengeCompleted  Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @default(now()) @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profileId       String
+  profile         UserProfile      @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+  tutorial        Tutorial         @relation(fields: [tutorialId], references: [id], onDelete: Cascade)
+  userQuizAttempt UserQuizAttempt? @relation(fields: [userQuizAttemptId], references: [id])
+
+  @@unique([profileId, tutorialId])
+  @@index([tutorialId, profileId])
+  @@map("users_progress")
+}
+
+model UserStreak {
+  profileId     String    @id @map("user_id")
+  streak        Int       @default(0)
+  streakDays    Int       @default(0)
+  lastLogin     DateTime?
+  currentStart  DateTime?
+  currentEnd    DateTime?
+  longestStreak Int       @default(0)
+  longestStart  DateTime?
+  longestEnd    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  profile UserProfile @relation(fields: [profileId], references: [userId], onDelete: Cascade)
 
   @@map("users_streaks")
 }
 
+model UserQuizAttempt {
+  id          String    @id @default(uuid())
+  quizId      String
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  score       Int       @default(0)
+  isPassed    Boolean   @default(false)
+  feedback    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+
+  profileId        String
+  profile          UserProfile           @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+  quiz             Quiz                  @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  questionAttempts UserQuestionAttempt[]
+  lastActivities   LastActivity[]
+  userProgress     UserProgress[]
+
+  @@unique([profileId, quizId])
+  @@index([quizId, profileId])
+  @@map("user_quiz_attempts")
+}
+
+model UserQuestionAttempt {
+  id                String   @id @default(uuid())
+  questionId        String
+  selectedOption    String
+  isCorrect         Boolean
+  xpEarned          Int      @default(0)
+  userQuizAttemptId String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+
+  quizAttempts   UserQuizAttempt @relation(fields: [userQuizAttemptId], references: [id], onDelete: Cascade)
+  lastActivities LastActivity[]
+
+  @@map("user_question_attempts")
+}
+
+model LastActivity {
+  id          String       @id @default(uuid())
+  userId      String
+  type        ActivityType
+  description String?
+  xpAwarded   Int?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
+
+  quizId            String?
+  tutorialId        String?
+  roadmapId         String?
+  roadmapStepId     String?
+  quizAttemptId     String?
+  questionAttemptId String?
+
+  quiz            Quiz?                @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  tutorial        Tutorial?            @relation(fields: [tutorialId], references: [id], onDelete: Cascade)
+  roadmap         Roadmap?             @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  roadmapStep     RoadmapStep?         @relation(fields: [roadmapStepId], references: [id], onDelete: Cascade)
+  quizAttempt     UserQuizAttempt?     @relation(fields: [quizAttemptId], references: [id], onDelete: Cascade)
+  questionAttempt UserQuestionAttempt? @relation(fields: [questionAttemptId], references: [id], onDelete: Cascade)
+  profile         UserProfile[]
+
+  @@index([userId, createdAt])
+  @@map("last_activity")
+}
+
+model UserBadge {
+  badgeId   String
+  earnedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profileId String      @id @map("user_id")
+  profile   UserProfile @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+  badge     Badge       @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, badgeId])
+  @@map("users_badges")
+}
+
+model Badge {
+  id          String   @id @default(uuid())
+  name        String
+  imageUrl    String
+  xpReq       Int      @default(0)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  badges UserBadge[]
+
+  @@map("badges")
+}
+
 model CoinWallet {
-  id        String   @id @default(uuid())
+  profileId String   @id @map("user_id")
   coins     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id])
+  profile UserProfile @relation(fields: [profileId], references: [userId], onDelete: Cascade)
 
   @@map("coin_wallet")
 }
@@ -185,8 +311,9 @@ model CoinTransaction {
   transactionAt DateTime        @default(now())
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
-  profileId     String
-  profile       UserProfile     @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+
+  profileId String
+  profile   UserProfile @relation(fields: [profileId], references: [userId], onDelete: Cascade)
 
   @@unique([profileId, transactionAt])
   @@map("coins_transactions")
@@ -241,7 +368,7 @@ model RoadmapStep {
   updatedAt   DateTime   @default(now()) @updatedAt
 
   parentId       String?
-  roadmapId      String?       
+  roadmapId      String?
   parent         RoadmapStep?   @relation("StepHierarchy", fields: [parentId], references: [id])
   children       RoadmapStep[]  @relation("StepHierarchy")
   roadmap        Roadmap?       @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
@@ -321,7 +448,7 @@ model QuizQuestion {
   questionText  String
   options       String[]
   correctAnswer String   @default("")
-  points        Int      @default(0)
+  xp            Int      @default(0)
   quizId        String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @default(now()) @updatedAt
@@ -331,100 +458,6 @@ model QuizQuestion {
   @@unique([quizId, questionText])
   @@index([quizId])
   @@map("quiz_questions")
-}
-
-model UserQuizAttempt {
-  id          String    @id @default(uuid())
-  userId      String
-  quizId      String
-  startedAt   DateTime  @default(now())
-  completedAt DateTime?
-  score       Int       @default(0)
-  isPassed    Boolean   @default(false)
-  feedback    String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now()) @updatedAt
-
-  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  quiz             Quiz                  @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  questionAttempts UserQuestionAttempt[]
-  lastActivities   LastActivity[]
-  userProgress     UserProgress[]
-
-  @@unique([userId, quizId])
-  @@index([quizId, userId])
-  @@map("user_quiz_attempts")
-}
-
-model UserQuestionAttempt {
-  id                String   @id @default(uuid())
-  questionId        String
-  selectedOption    String
-  isCorrect         Boolean
-  pointsEarned      Int      @default(0)
-  userQuizAttemptId String
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @default(now()) @updatedAt
-
-  quizAttempts   UserQuizAttempt @relation(fields: [userQuizAttemptId], references: [id], onDelete: Cascade)
-  lastActivities LastActivity[]
-
-  @@map("user_question_attempts")
-}
-
-model UserProgress {
-  id                  String    @id @default(uuid())
-  userId              String
-  tutorialId          String
-  bestAttemptId       String?
-  lastAttemptId       String?
-  userQuizAttemptId   String?
-  isCompleted         Boolean   @default(false)
-  completedAt         DateTime?
-  attempts            Int       @default(0)
-  bestScore           Int       @default(0)
-  percentageCompleted Int       @default(0)
-  interviewCompleted  Boolean   @default(false)
-  challengeCompleted  Boolean   @default(false)
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @default(now()) @updatedAt
-
-  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tutorial        Tutorial         @relation(fields: [tutorialId], references: [id], onDelete: Cascade)
-  userQuizAttempt UserQuizAttempt? @relation(fields: [userQuizAttemptId], references: [id])
-
-  @@unique([userId, tutorialId])
-  @@index([tutorialId, userId])
-  @@map("users_progress")
-}
-
-model LastActivity {
-  id            String       @id @default(uuid())
-  userId        String
-  type          ActivityType
-  description   String?
-  pointsAwarded Int?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @default(now()) @updatedAt
-
-  quizId            String?
-  tutorialId        String?
-  roadmapId         String?
-  roadmapStepId     String?
-  quizAttemptId     String?
-  questionAttemptId String?
-
-  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  quiz            Quiz?                @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  tutorial        Tutorial?            @relation(fields: [tutorialId], references: [id], onDelete: Cascade)
-  roadmap         Roadmap?             @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
-  roadmapStep     RoadmapStep?         @relation(fields: [roadmapStepId], references: [id], onDelete: Cascade)
-  quizAttempt     UserQuizAttempt?     @relation(fields: [quizAttemptId], references: [id], onDelete: Cascade)
-  questionAttempt UserQuestionAttempt? @relation(fields: [questionAttemptId], references: [id], onDelete: Cascade)
-  profile         UserProfile[]
-
-  @@index([userId, createdAt])
-  @@map("last_activity")
 }
 
 model AdminActivityLog {
@@ -456,32 +489,4 @@ model Tag {
   @@index([name])
   @@index([slug])
   @@map("tags")
-}
-
-model Badge {
-  id          String   @id @default(uuid())
-  name        String
-  imageUrl    String
-  pointsReq   Int
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
-
-  badges UserBadge[]
-
-  @@map("badges")
-}
-
-model UserBadge {
-  userId    String   @id @map("user_id")
-  badgeId   String
-  earnedAt  DateTime @default(now())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, badgeId])
-  @@map("users_badges")
 }

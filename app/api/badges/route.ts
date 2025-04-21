@@ -11,12 +11,12 @@ export async function GET(req: Request) {
         }
 
         const badges = await prisma.userBadge.findMany({
-            where: { userId: parseInt(userId) },
+            where: { profileId: userId },
             include: { badge: true },
         });
 
         return NextResponse.json(badges);
     } catch (error) {
-        return NextResponse.json({ error: "Failed to fetch badges" }, { status: 500 });
+        return NextResponse.json({ error: (error as Error).message }, { status: 500 });
     }
 }
