@@ -170,7 +170,7 @@ const fetchBadges = (userId: string) => fetchData<UserBadge[]>(`/badges`, { user
 const fetchLeaderboard = () => fetchData<LeaderBoard[]>(`/leaderboard`);
 const fetchTheme = () => fetchData<ThemeName>(`/profile/theme`);
 const fetchUserCoins = (userId: string) => fetchData<CoinWallet>(`/coins`, { userId });
-const fetchLasttActivity = () => fetchData<LastActivity[]>('/lastActivity');
+const fetchLastActivity = () => fetchData<LastActivity[]>('/lastActivity');
 /**
  * Fetches data for the admin dashboard.
  * @returns {Promise<AdminDashboard[]>} The promise resolves to an array of AdminDashboard objects.
