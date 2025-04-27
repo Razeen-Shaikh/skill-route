@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -126,7 +127,6 @@ model UserProfile {
   rank                String    @default("Beginner")
   level               Int       @default(1)
   xp                  Int       @default(0)
-  theme               ThemeName @default(LIGHT)
   levelProgress       Int       @default(0)
   levelProgressMax    Int       @default(100)
   createdAt           DateTime  @default(now())
@@ -140,6 +140,8 @@ model UserProfile {
   completedChallenges String[]
   completedInterviews String[]
   completedProjects   String[]
+
+  theme ThemeName @default(LIGHT)
 
   coinWallet      CoinWallet?
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -294,7 +296,7 @@ model Badge {
 
 model CoinWallet {
   profileId String   @id @map("user_id")
-  coins     Int      @default(0)
+  balance   Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 

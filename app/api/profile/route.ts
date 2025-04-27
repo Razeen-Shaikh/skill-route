@@ -1,21 +1,15 @@
-import { CoinTransaction, LastActivity, UserBadge, UserQuizAttempt } from '@/lib/interfaces';
+import { UserQuizAttempt, UserStreak, CoinTransaction, LastActivity, UserBadge, CoinWallet, User, UserProfile, UserProgress, Tutorial, Quiz, Badge } from '@/generated/prisma';
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getAuthUser } from "@/lib/auth";
-import { UserProgress } from "@/lib/interfaces";
+import { getAuthUser } from '@/lib/auth';
 
-export async function GET(req: Request) {
+export async function GET() {
     try {
         const user = await getAuthUser();
-
-        if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
         const userId = user?.id;
 
-        if (!userId) {
-            return NextResponse.json({ error: "User ID required" }, { status: 400 });
+        if (!user || !userId) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
         const userProfile = await prisma.userProfile.findUnique({
@@ -60,25 +54,7 @@ export async function GET(req: Request) {
     }
 }
 
-
-// export async function PUT(req: Request) {
-//     try {
-//         const { userId, avatarUrl, theme } = await req.json();
-
-//         const updatedUser = await prisma.userProfile.update({
-//             where: { userId },
-//             data: { theme, user: { update: { avatarUrl } } },
-//             include: { user: true },
-//         });
-
-//         return NextResponse.json(updatedUser);
-//     } catch {
-//         return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
-//     }
-// }
-
-
-function flattenUserProfile(userProfile: any) {
+function flattenUserProfile(userProfile: UserProfile & { user: User; coinWallet: CoinWallet | null; coinTransaction: CoinTransaction[]; progress: (UserProgress & { tutorial: Tutorial })[]; quizAttempts: (UserQuizAttempt & { quiz: Quiz })[]; userBadges: (UserBadge & { badge: Badge })[]; streaks: UserStreak | null; lastActivities: LastActivity[] }) {
     const {
         user,
         coinWallet,
@@ -101,13 +77,12 @@ function flattenUserProfile(userProfile: any) {
         lastName: user?.lastName ?? null,
         username: user?.username ?? null,
         emailVerified: user?.emailVerified ?? null,
-        provider: user?.provider ?? null,
 
         // --- Wallet ---
-        coins: coinWallet?.coins ?? 0,
+        coins: coinWallet?.balance ?? 0,
 
         // --- Transactions ---
-        transactions: coinTransaction.map((tx: CoinTransaction) => ({
+        transactions: coinTransaction.map((tx) => ({
             transactionId: tx.id,
             transactionType: tx.type,
             transactionAmount: tx.amount,
@@ -116,7 +91,7 @@ function flattenUserProfile(userProfile: any) {
         })),
 
         // --- Tutorial progress ---
-        tutorialProgress: progress.map((p: UserProgress) => ({
+        tutorialProgress: progress.map((p) => ({
             tutorialId: p.tutorialId,
             tutorialTitle: p.tutorial?.title ?? null,
             completed: p.isCompleted,
@@ -129,7 +104,7 @@ function flattenUserProfile(userProfile: any) {
         })),
 
         // --- Quiz attempts ---
-        quizAttempts: quizAttempts.map((a: UserQuizAttempt) => ({
+        quizAttempts: quizAttempts.map((a) => ({
             quizAttemptId: a.id,
             quizId: a.quizId,
             quizTitle: a.quiz?.title ?? null,
@@ -140,7 +115,7 @@ function flattenUserProfile(userProfile: any) {
         })),
 
         // --- Badges ---
-        earnedBadges: userBadges.map((b: UserBadge) => ({
+        earnedBadges: userBadges.map((b) => ({
             badgeId: b.badgeId,
             badgeName: b.badge?.name ?? null,
             badgeImage: b.badge?.imageUrl ?? null,

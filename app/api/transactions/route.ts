@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { TransactionType } from "@prisma/client";
+import { TransactionType } from "@/generated/prisma";
 
 export async function GET(req: NextRequest) {
     const user = await getAuthUser();
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Profile not found" }, { status: 404 });
         }
 
-        if (type === "SPENT" && profile!.coinWallet!.coins < amount) {
+        if (type === "SPENT" && profile!.coinWallet!.balance < amount) {
             return NextResponse.json({ error: "Insufficient coins" }, { status: 400 });
         }
 
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
         await prisma.coinWallet.update({
             where: { profileId: profile!.coinWallet!.profileId },
             data: {
-                coins: type === "EARNED" ? profile!.coinWallet!.coins + amount : profile!.coinWallet!.coins - amount,
+                balance: type === "EARNED" ? profile!.coinWallet!.balance + amount : profile!.coinWallet!.balance - amount,
             },
         });
 

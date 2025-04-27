@@ -1,4 +1,4 @@
-import { ActivityType } from "@prisma/client";
+import { ActivityType } from "@/generated/prisma";
 import prisma from "./prisma";
 
 export async function logActivity(

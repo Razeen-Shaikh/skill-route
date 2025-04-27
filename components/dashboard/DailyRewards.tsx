@@ -2,10 +2,10 @@
 import { updateRewards } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 
-export default function DailyRewards({ userId }: { userId: number }) {
+export default function DailyRewards() {
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["rewards", userId.toString()],
-    queryFn: () => updateRewards(userId),
+    queryKey: ["rewards"],
+    queryFn: () => updateRewards(),
     retry: false,
   });
 

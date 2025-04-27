@@ -5,14 +5,10 @@ import { NextResponse } from "next/server";
 export async function GET() {
     const user = await getAuthUser();
 
-    if (!user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const userId = user?.id;
 
-    if (!userId) {
-        return NextResponse.json({ error: "User ID required" }, { status: 400 });
+    if (!user || !userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const lasttActivities = await prisma.lastActivity.findMany({

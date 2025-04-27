@@ -4,8 +4,9 @@ import Image from "next/image"
 import { Badge } from "../ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import { formatDate } from "@/lib/helper";
+import { DashboardProfile } from "@/lib/api";
 
-const UserBadge = ({ badges }: { badges: { badgeId: string, badgeName: string | null, badgeImage: string | null, badgeDescription: string | null, earnedAt: string | null }[] | undefined }) => {
+const UserBadge = ({ badges }: { badges: DashboardProfile["earnedBadges"] }) => {
     return (
         <>
             <h3 className="text-lg font-semibold">Badges</h3>

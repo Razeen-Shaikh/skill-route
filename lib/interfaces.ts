@@ -194,21 +194,20 @@ export interface User {
 
 export interface UserProfile {
     userId: string;
-    bio?: string;
-    location?: string;
-    website?: string;
+    bio: string | null;
+    location: string | null;
+    website: string | null;
     socialLinks?: string[];
-    avatar?: string;
+    avatar: string | null;
     rank: string;
     level: number;
     xp: number;
-    theme: ThemeName;
     levelProgress: number;
     levelProgressMax: number;
     createdAt: Date;
     updatedAt: Date;
-    deletedAt?: Date;
-    lastLogin?: Date;
+    deletedAt: Date | null;
+    lastLogin: Date | null;
     completedQuizzes?: string[];
     completedTutorials?: string[];
     completedRoadmaps?: string[];
@@ -216,7 +215,10 @@ export interface UserProfile {
     completedChallenges?: string[];
     completedInterviews?: string[];
     completedProjects?: string[];
-    coinWallet?: CoinWallet;
+
+    theme: ThemeName;
+
+    coinWallet: CoinWallet | null;
     user: User;
     coinTransaction: CoinTransaction[];
     lastActivities: LastActivity[];
@@ -315,7 +317,7 @@ export interface Badge {
 
 export interface CoinWallet {
     id: string
-    coins: number
+    balance: number
     createdAt: Date
     updatedAt: Date
 

@@ -1,37 +1,38 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { TransactionType } from "@prisma/client";
+import { TransactionType } from "@/generated/prisma";
+import { getAuthUser } from "@/lib/auth";
 
-export async function POST(req: Request) {
+export async function POST() {
     try {
-        const { userId } = await req.json();
-        if (!userId) {
-            return NextResponse.json({ error: "User ID required" }, { status: 400 });
+        const user = await getAuthUser();
+        const userId = user?.id;
+
+        if (!user || !userId) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const streak = await prisma.userStreak.findUnique({ where: { userId } });
+        const streak = await prisma.userStreak.findUnique({ where: { profileId: userId } });
         if (!streak) {
             return NextResponse.json({ error: "Streak not found" }, { status: 404 });
         }
 
         // Reward based on streak
-        const reward = Math.min(50, streak.streakCount * 5);
+        const reward = Math.min(50, streak.streak * 5);
 
-        const userProfile = await prisma.userProfile.update({
-            where: { userId },
-            data: { coins: { increment: reward } }
+        const userProfile = await prisma.coinWallet.update({
+            where: { profileId: userId },
+            data: { balance: { increment: reward } }
         });
 
         await prisma.coinTransaction.create({
             data: {
-                userProfileId: userProfile.userId,
+                profileId: userProfile.profileId,
                 amount: reward,
                 description: "Streak reward",
                 type: TransactionType.EARNED,
             },
         })
-
-
 
         return NextResponse.json({ reward, message: `You earned ${reward} coins!` });
 

@@ -1,5 +1,7 @@
+'use client';
+
 import { Avatar, AvatarImage, AvatarFallback } from '@radix-ui/react-avatar';
-import { Medal, Star, Coins, Mountain, TrendingUp, Mail } from 'lucide-react';
+import { Medal, Star, Coins, Mountain, TrendingUp, Mail, Settings } from 'lucide-react';
 import React from 'react'
 import { getRankColor } from '@/lib/helper';
 import {
@@ -8,6 +10,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@radix-ui/react-tooltip';
+import Link from 'next/link';
 
 interface ProfilePropsType {
     firstName: string;
@@ -51,9 +54,17 @@ const Profile: React.FC<ProfilePropsType> = ({
             </Avatar>
 
             <div className="flex-1 flex flex-col gap-y-2">
-                <h2 className="text-xl font-bold text-gray-800">
-                    {firstName} {lastName} <span className="text-sm text-gray-500">(@{username})</span>
-                </h2>
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-bold text-gray-800">
+                        {firstName} {lastName} <span className="text-sm text-gray-500">(@{username})</span>
+                    </h2>
+                    <Link
+                        href={'/settings'}
+                        className="text-sm text-blue-600 hover:underline cursor-pointer"
+                    >
+                        <Settings />
+                    </Link>
+                </div>
 
                 <InfoRow icon={Mail} label="Email" value={email} className="text-gray-500" />
                 <InfoRow icon={Medal} label="Rank" value={safeRank} className={getRankColor(safeRank)} />
@@ -108,7 +119,7 @@ const InfoRow = ({
     value,
     className = '',
 }: {
-    icon: any;
+    icon: React.ElementType;
     label: string;
     value: string | number | React.ReactNode;
     className?: string;

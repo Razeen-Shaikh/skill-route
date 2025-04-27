@@ -1,0 +1,494 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =========================== ENUMS ===========================
+enum ActivityType {
+  BADGE
+  COINS
+  LOGIN
+  QUIZ
+  ROADMAP
+  STEP
+  TUTORIAL
+  TRANSACTION
+  XP
+  LEVEL
+}
+
+enum DifficultyLevel {
+  EASY
+  HARD
+  MEDIUM
+}
+
+enum RoadmapType {
+  AI
+  BACKEND
+  DEVOPS
+  FRONTEND
+  FULLSTACK
+  DATA_SCIENCE
+  MOBILE
+  MACHINE_LEARNING
+  MERN
+  MEAN
+  BLOCKCHAIN
+  CYBER_SECURITY
+  GAMING
+  CLOUD
+  SOFTWARE_TESTING
+}
+
+enum StepStatus {
+  COMPLETED
+  IN_PROGRESS
+  NOT_STARTED
+}
+
+enum TagType {
+  GLOBAL
+  QUIZ
+  ROADMAP
+  TUTORIAL
+}
+
+enum ThemeName {
+  DARK
+  LIGHT
+}
+
+enum TransactionType {
+  EARNED
+  PENALTY
+  REWARD
+  SPENT
+  ALL
+}
+
+enum TutorialStatus {
+  DRAFT
+  PENDING_APPROVAL
+  PUBLISHED
+}
+
+enum UnitType {
+  CHALLENGE
+  LESSON
+  QUIZ
+}
+
+enum UserRole {
+  ADMIN
+  MODERATOR
+  USER
+}
+
+// =========================== MODELS ===========================
+model User {
+  id                String    @id @default(uuid())
+  username          String    @unique
+  firstName         String
+  lastName          String?
+  email             String    @unique
+  passwordHash      String?
+  role              UserRole  @default(USER)
+  failedAttempts    Int       @default(0)
+  lockedUntil       DateTime?
+  resetToken        String?   @unique
+  resetTokenExpiry  DateTime?
+  emailVerified     Boolean   @default(false)
+  verificationToken String?   @unique
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now()) @updatedAt
+  deletedAt         DateTime?
+
+  profile           UserProfile?
+  roadmaps          Roadmap[]
+  roadmapProgress   RoadmapProgress[]
+  adminActivityLogs AdminActivityLog[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  userId              String    @id @map("user_id")
+  bio                 String?
+  location            String?
+  website             String?
+  socialLinks         String[]
+  avatar              String?
+  rank                String    @default("Beginner")
+  level               Int       @default(1)
+  xp                  Int       @default(0)
+  levelProgress       Int       @default(0)
+  levelProgressMax    Int       @default(100)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @default(now()) @updatedAt
+  deletedAt           DateTime?
+  lastLogin           DateTime?
+  completedQuizzes    String[]
+  completedTutorials  String[]
+  completedRoadmaps   String[]
+  completedSteps      String[]
+  completedChallenges String[]
+  completedInterviews String[]
+  completedProjects   String[]
+
+  theme ThemeName @default(LIGHT)
+
+  coinWallet      CoinWallet?
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coinTransaction CoinTransaction[]
+  lastActivities  LastActivity[]
+  progress        UserProgress[]
+  quizAttempts    UserQuizAttempt[]
+  userBadges      UserBadge[]
+  streaks         UserStreak?
+
+  @@map("users_profile")
+}
+
+model UserProgress {
+  tutorialId          String
+  bestAttemptId       String?
+  lastAttemptId       String?
+  userQuizAttemptId   String?
+  isCompleted         Boolean   @default(false)
+  completedAt         DateTime?
+  attempts            Int       @default(0)
+  bestScore           Int       @default(0)
+  percentageCompleted Int       @default(0)
+  interviewCompleted  Boolean   @default(false)
+  challengeCompleted  Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @default(now()) @updatedAt
+
+  profileId       String
+  profile         UserProfile      @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+  tutorial        Tutorial         @relation(fields: [tutorialId], references: [id], onDelete: Cascade)
+  userQuizAttempt UserQuizAttempt? @relation(fields: [userQuizAttemptId], references: [id])
+
+  @@unique([profileId, tutorialId])
+  @@index([tutorialId, profileId])
+  @@map("users_progress")
+}
+
+model UserStreak {
+  profileId     String    @id @map("user_id")
+  streak        Int       @default(0)
+  streakDays    Int       @default(0)
+  lastLogin     DateTime?
+  currentStart  DateTime?
+  currentEnd    DateTime?
+  longestStreak Int       @default(0)
+  longestStart  DateTime?
+  longestEnd    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  profile UserProfile @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+
+  @@map("users_streaks")
+}
+
+model UserQuizAttempt {
+  id          String    @id @default(uuid())
+  quizId      String
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  score       Int       @default(0)
+  isPassed    Boolean   @default(false)
+  feedback    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+
+  profileId        String
+  profile          UserProfile           @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+  quiz             Quiz                  @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  questionAttempts UserQuestionAttempt[]
+  lastActivities   LastActivity[]
+  userProgress     UserProgress[]
+
+  @@unique([profileId, quizId])
+  @@index([quizId, profileId])
+  @@map("user_quiz_attempts")
+}
+
+model UserQuestionAttempt {
+  id                String   @id @default(uuid())
+  questionId        String
+  selectedOption    String
+  isCorrect         Boolean
+  xpEarned          Int      @default(0)
+  userQuizAttemptId String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+
+  quizAttempts   UserQuizAttempt @relation(fields: [userQuizAttemptId], references: [id], onDelete: Cascade)
+  lastActivities LastActivity[]
+
+  @@map("user_question_attempts")
+}
+
+model LastActivity {
+  id          String       @id @default(uuid())
+  userId      String
+  type        ActivityType
+  description String?
+  xpAwarded   Int?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
+
+  quizId            String?
+  tutorialId        String?
+  roadmapId         String?
+  roadmapStepId     String?
+  quizAttemptId     String?
+  questionAttemptId String?
+
+  quiz            Quiz?                @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  tutorial        Tutorial?            @relation(fields: [tutorialId], references: [id], onDelete: Cascade)
+  roadmap         Roadmap?             @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  roadmapStep     RoadmapStep?         @relation(fields: [roadmapStepId], references: [id], onDelete: Cascade)
+  quizAttempt     UserQuizAttempt?     @relation(fields: [quizAttemptId], references: [id], onDelete: Cascade)
+  questionAttempt UserQuestionAttempt? @relation(fields: [questionAttemptId], references: [id], onDelete: Cascade)
+  profile         UserProfile[]
+
+  @@index([userId, createdAt])
+  @@map("last_activity")
+}
+
+model UserBadge {
+  badgeId   String
+  earnedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profileId String      @id @map("user_id")
+  profile   UserProfile @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+  badge     Badge       @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, badgeId])
+  @@map("users_badges")
+}
+
+model Badge {
+  id          String   @id @default(uuid())
+  name        String
+  imageUrl    String
+  xpReq       Int      @default(0)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  badges UserBadge[]
+
+  @@map("badges")
+}
+
+model CoinWallet {
+  profileId String   @id @map("user_id")
+  balance   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  profile UserProfile @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+
+  @@map("coin_wallet")
+}
+
+model CoinTransaction {
+  id            String          @id @default(uuid())
+  type          TransactionType
+  amount        Int
+  description   String
+  transactionAt DateTime        @default(now())
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  profileId String
+  profile   UserProfile @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+
+  @@unique([profileId, transactionAt])
+  @@map("coins_transactions")
+}
+
+model Roadmap {
+  id          String      @id @default(uuid())
+  title       String
+  description String?
+  category    String?
+  type        RoadmapType
+  createdById String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @default(now()) @updatedAt
+  deletedAt   DateTime?
+
+  createdBy       User              @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  steps           RoadmapStep[]
+  roadmapProgress RoadmapProgress[]
+  lastActivities  LastActivity[]
+
+  @@map("roadmaps")
+}
+
+model RoadmapProgress {
+  id          String    @id @default(uuid())
+  userId      String
+  roadmapId   String
+  progress    Int       @default(0)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roadmap Roadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roadmapId])
+  @@index([roadmapId, userId])
+  @@map("roadmaps_progress")
+}
+
+model RoadmapStep {
+  id          String     @id @default(uuid())
+  title       String
+  description String?
+  order       Int
+  status      StepStatus @default(NOT_STARTED)
+  progress    Int        @default(0)
+  completedAt DateTime?
+  completed   Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now()) @updatedAt
+
+  parentId       String?
+  roadmapId      String?
+  parent         RoadmapStep?   @relation("StepHierarchy", fields: [parentId], references: [id])
+  children       RoadmapStep[]  @relation("StepHierarchy")
+  roadmap        Roadmap?       @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  tutorials      Tutorial[]
+  quizzes        Quiz[]
+  lastActivities LastActivity[]
+
+  @@map("steps")
+}
+
+model Tutorial {
+  id           String          @id @default(uuid())
+  title        String
+  description  String?
+  content      String          @db.Text
+  category     String?
+  authorId     String?
+  likes        Int             @default(0)
+  views        Int             @default(0)
+  isLocked     Boolean         @default(true)
+  cost         Int             @default(0)
+  hasChallenge Boolean         @default(false)
+  difficulty   DifficultyLevel @default(EASY)
+  status       TutorialStatus  @default(DRAFT)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @default(now()) @updatedAt
+  deletedAt    DateTime?
+
+  quizzes           Quiz[]
+  progress          UserProgress[]
+  tutorialTags      Tag[]          @relation("TutorialTags")
+  stepsId           String?
+  steps             RoadmapStep?   @relation(fields: [stepsId], references: [id])
+  tutorialId        String?
+  tutorial          Tutorial?      @relation("SelfRelation", fields: [tutorialId], references: [id])
+  nextTutorialId    String?
+  nextTutorial      Tutorial?      @relation("NextTutorial", fields: [nextTutorialId], references: [id])
+  previousTutorials Tutorial[]     @relation("NextTutorial")
+  relatedTutorials  Tutorial[]     @relation("SelfRelation")
+  lastActivities    LastActivity[]
+
+  @@map("tutorials")
+}
+
+model Quiz {
+  id                String          @id @default(uuid())
+  title             String
+  slug              String          @unique
+  isTimed           Boolean         @default(false)
+  timeLimit         Int?
+  maxScore          Int             @default(100)
+  passPercentage    Int             @default(50)
+  difficulty        DifficultyLevel @default(EASY)
+  order             Int?            @default(0)
+  tutorialLocked    Boolean?        @default(false)
+  questionCount     Int?            @default(0)
+  estimatedDuration Int?
+  tutorialId        String
+  stepsId           String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @default(now()) @updatedAt
+  deletedAt         DateTime?
+
+  questions      QuizQuestion[]
+  attempts       UserQuizAttempt[]
+  tutorial       Tutorial          @relation(fields: [tutorialId], references: [id], onDelete: Cascade)
+  tags           Tag[]             @relation("QuizTags")
+  steps          RoadmapStep?      @relation(fields: [stepsId], references: [id])
+  lastActivities LastActivity[]
+
+  @@unique([slug, tutorialId])
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id            String   @id @default(uuid())
+  questionText  String
+  options       String[]
+  correctAnswer String   @default("")
+  xp            Int      @default(0)
+  quizId        String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@unique([quizId, questionText])
+  @@index([quizId])
+  @@map("quiz_questions")
+}
+
+model AdminActivityLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  action    String
+  target    String
+  targetId  String
+  timestamp DateTime @default(now())
+
+  admin User @relation(fields: [adminId], references: [id])
+
+  @@index([adminId, timestamp])
+  @@map("admin_activity_logs")
+}
+
+model Tag {
+  id         String   @id @default(uuid())
+  name       String   @unique
+  slug       String   @unique
+  usageCount Int      @default(0)
+  type       TagType  @default(GLOBAL)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  quizzes   Quiz[]     @relation("QuizTags")
+  tutorials Tutorial[] @relation("TutorialTags")
+
+  @@index([name])
+  @@index([slug])
+  @@map("tags")
+}

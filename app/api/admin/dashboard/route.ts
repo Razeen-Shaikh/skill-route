@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
-import { authOptions } from '@/lib/auth/authOptions';
+import { getAuthUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-    const session = await getServerSession(authOptions);
+    const user = await getAuthUser();
 
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!user || user.role !== 'ADMIN') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -22,12 +21,12 @@ export async function GET() {
     const topUsers = await prisma.user.findMany({
         orderBy: {
             profile: {
-                points: 'desc',
+                xp: 'desc',
             },
         },
         where: {
             profile: {
-                points: {
+                xp: {
                     gt: 0,
                 },
             },
@@ -40,10 +39,15 @@ export async function GET() {
             email: true,
             profile: {
                 select: {
-                    points: true,
+                    xp: true,
                     level: true,
                     completedQuizzes: true,
                     completedTutorials: true,
+                    completedRoadmaps: true,
+                    completedSteps: true,
+                    completedChallenges: true,
+                    completedInterviews: true,
+                    completedProjects: true,
                     rank: true,
                 },
             },

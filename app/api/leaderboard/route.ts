@@ -1,6 +1,18 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
+// Define the FormattedUser type
+type FormattedUser = {
+    id: string;
+    firstName: string;
+    lastName: string | null;
+    avatar: string | null;
+    rank: string | null;
+    xp: number | null;
+    coins: number | null;
+    level: number | null;
+};
+
 export async function GET() {
     try {
         const topUsers = await prisma.user.findMany({
@@ -14,7 +26,7 @@ export async function GET() {
                     include: {
                         coinWallet: {
                             select: {
-                                coins: true,
+                                balance: true,
                             },
                         },
                     },
@@ -26,19 +38,24 @@ export async function GET() {
             return NextResponse.json({ error: "No users found" }, { status: 404 });
         }
 
-        const formattedTopUsers = topUsers.map((user) => ({
-            id: user.id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            avatar: user.profile?.avatar,
-            rank: user?.profile?.rank,
-            xp: user?.profile?.xp,
-            coins: user?.profile?.coinWallet?.coins,
-            level: user?.profile?.level,
+        const formattedTopUsers: FormattedUser[] = topUsers.map((user) => ({
+            id: 'id' in user ? user.id : '',
+            firstName: 'firstName' in user ? user.firstName : '',
+            lastName: 'lastName' in user ? user.lastName : null,
+            avatar: user.profile?.avatar ?? null,
+            rank: user.profile?.rank ?? null,
+            xp: user.profile?.xp ?? null,
+            coins: user.profile?.coinWallet?.balance ?? null,
+            level: user.profile?.level ?? null,
         }));
 
         // Sort users by rank
-        formattedTopUsers.sort((a, b) => (Number(a.rank) ?? Infinity) - (Number(b.rank) ?? Infinity));
+        formattedTopUsers.sort((a, b) => {
+            if (a.rank && b.rank) {
+                return a.rank.localeCompare(b.rank);
+            }
+            return 0;
+        });
 
         return NextResponse.json(formattedTopUsers);
     } catch (error) {

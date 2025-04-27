@@ -3,9 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  fetchLasttActivity,
   fetchProfile,
-  fetchTutorials,
 } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,13 +13,12 @@ import { Progress } from "@/components/ui/progress";
 import Leaderboard from "@/components/dashboard/Leaderboard";
 import UserProfile from "@/components/dashboard/Profile";
 import UserBadge from "@/components/dashboard/UserBadge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
-  const { data: session, status } = useSession();
-  // const email = session?.user?.email ?? null;
-  const userId = session?.user?.id?.toString();
+  const { status } = useSession();
 
-  const isAuthenticated = (status === "authenticated") && userId;
+  const isAuthenticated = (status === "authenticated");
 
   const { data: profile, isLoading: isProfileLoading } = useQuery({
     queryKey: ["profile"],
@@ -46,88 +43,82 @@ export default function Dashboard() {
     username,
     email,
     streakCount,
-    longestStreak
+    longestStreak,
+    lastActivities
   } = profile || {};
 
-  const { data: activities, isLoading: isActivitiesLoading } = useQuery({
-    queryKey: ["recentActivity"],
-    queryFn: async () => fetchLasttActivity(),
-    enabled: !!isAuthenticated,
-    refetchOnWindowFocus: false,
-  });
+  const tutorialsCompletedPercentage = ((Number(completedTutorials) ?? 0) / (Number(totalTutorials) ?? 1)) * 100;
+  const quzzesCompletedPercentage = ((Number(completedQuizzes) ?? 0) / (Number(totalQuizzes) ?? 1)) * 100;
 
-  const tutorialsCompletedPercentage = ((Number(profile?.completedTutorials) ?? 0) / (Number(profile?.totalTutorials) ?? 1)) * 100;
-  const quzzesCompletedPercentage = ((Number(profile?.completedQuizzes) ?? 0) / (Number(profile?.totalQuizzes) ?? 1)) * 100;
+  if (isProfileLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <Card className="p-4 flex items-center space-x-6">
+          <Skeleton className="h-16 w-16 rounded-full" />
+          <div className="flex-1 space-y-3">
+            <Skeleton className="h-4 w-1/3" />
+            <Skeleton className="h-3 w-1/4" />
+            <Skeleton className="h-3 w-1/5" />
+            <Skeleton className="h-3 w-1/5" />
+          </div>
+        </Card>
 
-  // if (isActivitiesLoading) {
-  //   return (
-  //     <div className="p-6 space-y-6">
-  //       <Card className="p-4 flex items-center space-x-6">
-  //         <Skeleton className="h-16 w-16 rounded-full" />
-  //         <div className="flex-1 space-y-3">
-  //           <Skeleton className="h-4 w-1/3" />
-  //           <Skeleton className="h-3 w-1/4" />
-  //           <Skeleton className="h-3 w-1/5" />
-  //           <Skeleton className="h-3 w-1/5" />
-  //         </div>
-  //       </Card>
+        <Card className="p-4">
+          <Skeleton className="h-4 w-32 mb-4" />
+          <div className="flex gap-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-12 rounded-full" />
+            ))}
+          </div>
+        </Card>
 
-  //       <Card className="p-4">
-  //         <Skeleton className="h-4 w-32 mb-4" />
-  //         <div className="flex gap-3">
-  //           {Array.from({ length: 5 }).map((_, i) => (
-  //             <Skeleton key={i} className="h-12 w-12 rounded-full" />
-  //           ))}
-  //         </div>
-  //       </Card>
+        <Tabs defaultValue="progress">
+          <TabsList className="flex space-x-4">
+            <TabsTrigger value="progress">Progress</TabsTrigger>
+            <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+            <TabsTrigger value="activity">Recent Activity</TabsTrigger>
+          </TabsList>
+          <TabsContent value="progress">
+            <Card>
+              <CardContent className="space-y-4">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-2 w-full" />
+                <Skeleton className="h-4 w-1/3 mt-4" />
+                <Skeleton className="h-2 w-full" />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="leaderboard">
+            <Card>
+              <CardContent className="space-y-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-6 w-full" />
+                ))}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="activity">
+            <Card>
+              <CardContent className="space-y-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-4 w-full" />
+                ))}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
-  //       <Tabs defaultValue="progress">
-  //         <TabsList className="flex space-x-4">
-  //           <TabsTrigger value="progress">Progress</TabsTrigger>
-  //           <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
-  //           <TabsTrigger value="activity">Recent Activity</TabsTrigger>
-  //         </TabsList>
-  //         <TabsContent value="progress">
-  //           <Card>
-  //             <CardContent className="space-y-4">
-  //               <Skeleton className="h-4 w-1/3" />
-  //               <Skeleton className="h-2 w-full" />
-  //               <Skeleton className="h-4 w-1/3 mt-4" />
-  //               <Skeleton className="h-2 w-full" />
-  //             </CardContent>
-  //           </Card>
-  //         </TabsContent>
-  //         <TabsContent value="leaderboard">
-  //           <Card>
-  //             <CardContent className="space-y-2">
-  //               {Array.from({ length: 5 }).map((_, i) => (
-  //                 <Skeleton key={i} className="h-6 w-full" />
-  //               ))}
-  //             </CardContent>
-  //           </Card>
-  //         </TabsContent>
-  //         <TabsContent value="activity">
-  //           <Card>
-  //             <CardContent className="space-y-2">
-  //               {Array.from({ length: 3 }).map((_, i) => (
-  //                 <Skeleton key={i} className="h-4 w-full" />
-  //               ))}
-  //             </CardContent>
-  //           </Card>
-  //         </TabsContent>
-  //       </Tabs>
-
-  //       <Card>
-  //         <CardContent className="space-y-2">
-  //           <Skeleton className="h-4 w-1/3" />
-  //           {Array.from({ length: 3 }).map((_, i) => (
-  //             <Skeleton key={i} className="h-4 w-full" />
-  //           ))}
-  //         </CardContent>
-  //       </Card>
-  //     </div>
-  //   );
-  // }
+        <Card>
+          <CardContent className="space-y-2">
+            <Skeleton className="h-4 w-1/3" />
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-4 w-full" />
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 h-[calc(100vh-4.5rem)] overflow-y-auto">
@@ -147,7 +138,7 @@ export default function Dashboard() {
         />
       </Card>
       <Card className="p-4">
-        <UserBadge badges={earnedBadges} />
+        <UserBadge badges={earnedBadges ?? []} />
       </Card>
       <Tabs defaultValue="progress">
         <TabsList className="flex space-x-4">
@@ -184,7 +175,7 @@ export default function Dashboard() {
         <TabsContent value="activity">
           <Card>
             <CardContent className="space-y-4">
-              <RecentActivities activities={activities ?? []} />
+              <RecentActivities activities={lastActivities ?? []} />
             </CardContent>
           </Card>
         </TabsContent>

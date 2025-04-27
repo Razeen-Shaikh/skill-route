@@ -84,6 +84,42 @@ export interface DashboardProfile extends Omit<UserProfile, "lastActivities" | "
     totalQuizzes: number;
 }
 
+export interface AdminDashboard {
+    stats: {
+        users: number;
+        tutorials: number;
+        quizzes: number;
+        paths: number;
+    };
+    topUsers: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        profile: {
+            xp: number;
+            level: number;
+            rank: string;
+            completedQuizzes: string[];
+            completedTutorials: string[];
+            completedRoadmaps: string[];
+            completedSteps: string[];
+            completedChallenges: string[];
+            completedInterviews: string[];
+            completedProjects: string[];
+        };
+    }[];
+    recentActivities: {
+        id: string;
+        action: string;
+        timestamp: string;
+        admin: {
+            firstName: string;
+            lastName: string;
+        };
+    }[];
+}
+
 const API_BASE_URL = "/api";
 
 const api = axios.create({
@@ -125,17 +161,21 @@ const putData = async <T>(url: string, body: object) => {
 /** Fetch functions **/
 const fetchUserData = () => fetchData<User>("/user");
 const fetchTutorials = () => fetchData<Tutorial[]>("/tutorials");
-const fetchTutorial = (tutorialId: string) => fetchData<Tutorial>(`/tutorials/${tutorialId}`);
+const fetchTutorial = (tutorialId: string) => fetchData<Tutorial>(`/tutorial?tutorialId=${tutorialId}`);
 const fetchQuizzes = () => fetchData<Quiz[]>('/quizzes');
 const fetchQuiz = (quizId: string) => fetchData<Quiz>(`/quiz?quizId=${quizId}`);
 const fetchUserProgress = (userId: string, tutorialId: string) => fetchData<UserProgress>(`/tutorials/progress`, { userId, tutorialId });
 const fetchDashboardData = (email: string) => fetchData<User>(`/dashboard`, { email });
 const fetchBadges = (userId: string) => fetchData<UserBadge[]>(`/badges`, { userId });
 const fetchLeaderboard = () => fetchData<LeaderBoard[]>(`/leaderboard`);
-const fetchTheme = (userId: string) => fetchData<ThemeName>(`/profile/theme`, { userId });
+const fetchTheme = () => fetchData<ThemeName>(`/profile/theme`);
 const fetchUserCoins = (userId: string) => fetchData<CoinWallet>(`/coins`, { userId });
 const fetchLasttActivity = () => fetchData<LastActivity[]>('/lastActivity');
-const fetchAdminDashboardData = () => fetchData('/admin/dashboard');
+/**
+ * Fetches data for the admin dashboard.
+ * @returns {Promise<AdminDashboard[]>} The promise resolves to an array of AdminDashboard objects.
+ */
+const fetchAdminDashboard = () => fetchData<AdminDashboard>('/admin/dashboard');
 const fetchRoadmaps = () => fetchData<Roadmap[]>('/roadmaps');
 export const fetchProfile = () => fetchData<DashboardProfile>('/profile')
 
@@ -147,14 +187,14 @@ const fetchQuizAttempts = (quizIds: string[]) => fetchData<{ quizId: string, sco
 
 /** Update functions **/
 const updateProfile = (userId: string, avatar: string, theme: string) => putData(`/profile`, { userId, avatarUrl: avatar, theme });
-const updateRewards = (userId: string) => postData(`/rewards`, { userId });
+const updateRewards = () => postData<{ reward: number; message: string }>(`/rewards`, {});
 const updateStreak = (userId: string) => postData(`/streak`, { userId });
-const updateTheme = (userId: string, newTheme: string) => putData<ThemeName>(`/profile/theme`, { userId, theme: newTheme });
+const updateTheme = (newTheme: string) => putData<ThemeName>(`/profile/theme`, { theme: newTheme });
 const updateProgress = (userId: string, tutorialId: string, percentageCompleted: number) => putData(`/tutorials/progress`, { userId, tutorialId, percentageCompleted });
 const markComplete = (roadmapId: string) => postData(`/roadmap/complete`, { id: roadmapId });
 
 /** Create functions **/
-const submitQuizAttempt = (userId: string, quizId: string, attempts: { questionId: string; selectedOption: string }[]) => postData<UserQuizAttempt>(`/quiz/submit`, { userId, quizId, attempts });
+const submitQuizAttempt = (quizId: string, attempts: { questionId: string; selectedOption: string }[]) => postData<UserQuizAttempt>(`/quiz/submit`, { quizId, attempts });
 const registerUser = async (name: string, email: string, password: string) => postData(`/auth/register`, { name, email, password });
 
 
@@ -168,7 +208,7 @@ export {
     fetchDashboardData,
     fetchBadges,
     fetchLeaderboard,
-    fetchAdminDashboardData,
+    fetchAdminDashboard,
     fetchTheme,
     fetchUserCoins,
     fetchLasttActivity,

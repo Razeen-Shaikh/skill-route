@@ -2,24 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { Sun, Moon, Loader } from "lucide-react";
-import { ThemeName } from "@prisma/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { fetchTheme, updateTheme } from "@/lib/api";
 import { getStoredOrSystemTheme } from "@/lib/helper";
+import { ThemeName } from "@/lib/interfaces";
 
 export default function ThemeSwitcher() {
-  const { data: session, status } = useSession();
-  const userId = session?.user?.id;
-  const isAuthenticated = status === "authenticated" && userId;
+  const { status } = useSession();
+  const isAuthenticated = status === "authenticated";
 
   // **Step 1: Ensure no hydration mismatch by initializing undefined**
   const [theme, setTheme] = useState<ThemeName | undefined>(undefined);
 
   // **Step 2: Fetch theme from server**
   const { data: fetchedTheme, isLoading, isError } = useQuery({
-    queryKey: ["theme", userId],
-    queryFn: async () => fetchTheme(userId!),
+    queryKey: ["theme"],
+    queryFn: async () => fetchTheme(),
     enabled: !!isAuthenticated,
     refetchOnWindowFocus: false,
   });
@@ -38,14 +37,14 @@ export default function ThemeSwitcher() {
     if (theme !== undefined) {
       document.documentElement.classList.toggle(
         "dark",
-        theme === ThemeName.DARK
+        theme === "DARK"
       );
     }
   }, [theme]);
 
   // **Step 5: Mutation to update user preference**
   const updateThemeMutation = useMutation({
-    mutationFn: async (newTheme: ThemeName) => updateTheme(userId!, newTheme),
+    mutationFn: async (newTheme: ThemeName) => updateTheme(newTheme),
     onSuccess: (newTheme) => {
       localStorage.setItem("theme", newTheme);
       setTheme(newTheme);
@@ -71,9 +70,9 @@ export default function ThemeSwitcher() {
   // **Step 8: Toggle theme function**
   const toggleTheme = () => {
     const newTheme =
-      theme === ThemeName.LIGHT ? ThemeName.DARK : ThemeName.LIGHT;
+      theme === "LIGHT" ? "DARK" : "LIGHT";
     setTheme(newTheme);
-    if (userId) {
+    if (!!isAuthenticated) {
       updateThemeMutation.mutate(newTheme);
     } else {
       localStorage.setItem("theme", newTheme);
@@ -86,7 +85,7 @@ export default function ThemeSwitcher() {
       className="fixed bottom-4 right-4 p-3 bg-gray-900 text-white dark:bg-white dark:text-gray-900 rounded-full shadow-lg hover:scale-110 transition"
       aria-label="Toggle theme"
     >
-      {theme === ThemeName.LIGHT ? (
+      {theme === "LIGHT" ? (
         <Moon className="w-5 h-5" />
       ) : (
         <Sun className="w-5 h-5" />

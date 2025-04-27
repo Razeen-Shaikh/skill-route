@@ -1,23 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getAuthUser } from '@/lib/auth';
+import { Prisma } from '@/generated/prisma';
 
 export async function POST(request: NextRequest) {
     try {
-        const { userId, quizId, attempts } = await request.json();
+        const user = await getAuthUser();
+        const userId = user?.id;
 
-        if (!userId) {
-            return NextResponse.json(
-                { error: 'userId is required.' },
-                { status: 400 }
-            );
-        }
+        const { quizId, attempts } = await request.json();
 
-        if (!quizId) {
-            return NextResponse.json(
-                { error: 'quizId is required.' },
-                { status: 400 }
-            );
-        }
+        if (!userId) { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+
+        if (!quizId) { return NextResponse.json({ error: 'quizId is required.' }, { status: 400 }); }
 
         if (!attempts || !Array.isArray(attempts) || attempts.length === 0) {
             return NextResponse.json(
@@ -35,7 +30,7 @@ export async function POST(request: NextRequest) {
 
         // Map questionId to correct answers for quick lookup
         const correctAnswersMap = new Map(
-            questions.map((q) => [q.id, q.correctAnswer])
+            questions.map((q: { id: string; correctAnswer: string }) => [q.id, q.correctAnswer])
         );
 
         let totalScore = 0;
@@ -57,7 +52,7 @@ export async function POST(request: NextRequest) {
         console.log('userQuestionAttempts', userQuestionAttempts);
 
         // Perform the transaction to ensure consistency
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             // Create UserQuizAttempt
             const userQuizAttempt = await tx.userQuizAttempt.create({
                 data: {

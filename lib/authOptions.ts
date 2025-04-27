@@ -3,6 +3,9 @@ import GoogleProvider from "next-auth/providers/google";
 import GitHubProvider from "next-auth/providers/github";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
+import { JWT } from "next-auth/jwt";
+import { Account, Session, User } from "next-auth";
+import { AdapterUser } from "next-auth/adapters";
 
 export const authOptions = {
     providers: [
@@ -48,73 +51,81 @@ export const authOptions = {
                     id: user.id.toString(),
                     email: user.email,
                     name: user.username,
-                    avatarUrl: user.avatarUrl,
+                    image: user.profile?.avatar || undefined,
                     role: user.role,
-                    theme: user.profile ? user.profile.theme : null,
-                };
+                } as unknown as User;
             },
         }),
     ],
     callbacks: {
-        async signIn({ user, account }: { user: { email?: string; id?: string; name?: string; image?: string }; account: { provider?: string } }) {
+        /**
+         * @param {object} sessionInfo
+         * @param {User} sessionInfo.user
+         * @param {Account} sessionInfo.account
+         * @returns {Promise<boolean>}
+         */
+        async signIn({ user, account }: { user: User | AdapterUser; account: Account | null }): Promise<boolean> {
+            if (!account) {
+                return false;
+            }
             if (account?.provider === "google" || account?.provider === "github") {
-                try {
-                    const email = user.email || `${user.id}@${account.provider}.com`;
+                const userEmail = user.email || `${user.id}@${account.provider}.com`;
 
-                    // Check if user exists
-                    let existingUser = await prisma.user.findUnique({ where: { email } });
+                // Check if user exists
+                let existingUser = await prisma.user.findUnique({ where: { email: userEmail } });
 
-                    if (!existingUser) {
-                        const baseUsername = user.name?.replace(/\s+/g, "").toLowerCase() || "user";
-                        let username = baseUsername;
-                        let counter = 1;
+                if (!existingUser) {
+                    const baseUsername = (user.name?.replace(/\s+/g, "").toLowerCase() || "user");
+                    let username = baseUsername;
+                    let counter = 1;
 
-                        // Ensure unique username
-                        while (await prisma.user.findUnique({ where: { username } })) {
-                            username = `${baseUsername}${counter}`;
-                            counter++;
-                        }
-
-                        existingUser = await prisma.user.create({
-                            data: {
-                                email,
-                                username,
-                                firstName: user.name?.split(" ")[0] || "User",
-                                avatarUrl: user.image,
-                                role: "USER",
-                                emailVerified: true, // OAuth users are verified
-                                profile: { create: { theme: "LIGHT" } },
-                            },
-                        });
+                    // Ensure unique username
+                    while (await prisma.user.findUnique({ where: { username } })) {
+                        username = `${baseUsername}${counter}`;
+                        counter++;
                     }
 
-                    return true;
-                } catch (error) {
-                    console.error("OAuth Sign-in Error:", error);
-                    return false;
+                    existingUser = await prisma.user.create({
+                        data: {
+                            email: userEmail,
+                            username,
+                            firstName: user.name?.split(" ")[0] || "User",
+                            role: "USER",
+                            emailVerified: true,
+                            profile: { create: { theme: "LIGHT", avatar: user.image } },
+                        },
+                    });
                 }
+
+                return true;
             }
             return true;
         },
-        async jwt({ token, user }: { token: { id?: string; avatarUrl?: string; role?: string }; user?: { id: string; avatarUrl: string; role: string } }) {
+        async jwt({ token, user }: { token: JWT; user: User | AdapterUser }) {
             if (user) {
                 token.id = user.id;
-                token.avatarUrl = user.avatarUrl;
+                token.avatar = user.image;
                 token.role = user.role;
             }
             return token;
         },
-        async session({ session, token }: { session: { user?: { id?: string; image?: string; role?: string } }; token: { id?: string; avatarUrl?: string; role?: string } }) {
+        async session({
+            session,
+            token,
+        }: {
+            session: Session;
+            token: JWT;
+        }) {
             if (session.user) {
-                session.user.id = token.id?.toString();
-                session.user.image = token.avatarUrl;
-                session.user.role = token.role;
+                session.user.id = token.id as string;
+                session.user.image = token.avatarUrl as string;
+                session.user.role = token.role as string;
             }
             return session;
         },
     },
     session: {
-        strategy: "jwt",
+        strategy: "jwt" as const,
         maxAge: 60 * 60 * 24 * 7, // 7 days
     },
     secret: process.env.NEXTAUTH_SECRET,
