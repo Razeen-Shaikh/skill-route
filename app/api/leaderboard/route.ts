@@ -51,10 +51,9 @@ export async function GET() {
 
         // Sort users by rank
         formattedTopUsers.sort((a, b) => {
-            if (a.rank && b.rank) {
-                return a.rank.localeCompare(b.rank);
-            }
-            return 0;
+            const rankA = a.rank ?? '';
+            const rankB = b.rank ?? '';
+            return rankA.localeCompare(rankB);
         });
 
         return NextResponse.json(formattedTopUsers);
