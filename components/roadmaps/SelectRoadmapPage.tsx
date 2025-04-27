@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Roadmap } from "@prisma/client";
 import { CheckCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchRoadmaps } from "@/lib/api";

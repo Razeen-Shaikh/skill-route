@@ -1,38 +1,38 @@
-import { RecentActivity } from "@/lib/interfaces/interface";
+import { DashboardProfile } from "@/lib/api";
 
 export default function RecentActivities({
   activities,
 }: {
-  activities: RecentActivity[];
+  activities: DashboardProfile["lastActivities"];
 }) {
   return (
     <ul>
-      {activities?.map((activity: RecentActivity) => (
+      {activities?.map(({ activityId, activityType, activityDescription, xpAwarded, createdAt }) => (
         <li
-          key={activity.id}
+          key={activityId}
           className="mt-2 text-sm flex items-center justify-between"
         >
-          {activity.type === "quiz_completed" && (
-            <p>✅ Completed &quot;{activity.description}&quot; Quiz</p>
+          {activityType === "QUIZ" && (
+            <p>✅ Completed &quot;{activityDescription}&quot; Quiz</p>
           )}
-          {activity.type === "badge_unlocked" && (
-            <p>✅ Unlocked &quot;{activity.description}&quot; Badge</p>
+          {activityType === "BADGE" && (
+            <p>✅ Unlocked &quot;{activityDescription}&quot; Badge</p>
           )}
-          {activity.type === "xp_earned" && (
-            <p>✅ Earned {activity.value} XP</p>
+          {activityType === "XP" && (
+            <p>✅ Earned {xpAwarded} XP</p>
           )}
-          {activity.type === "coins_earned" && (
-            <p>💰 Earned {activity.value} Coins</p>
+          {activityType === "COINS" && (
+            <p>💰 Earned {xpAwarded} Coins</p>
           )}
-          {activity.type === "tutorial_completed" && (
-            <p>✅ Completed &quot;{activity.description}&quot; Tutorial</p>
+          {activityType === "TUTORIAL" && (
+            <p>✅ Completed &quot;{activityDescription}&quot; Tutorial</p>
           )}
-          {activity.type === "level_unlocked" && (
-            <p>✅ Unlocked Level {activity.value}</p>
+          {activityType === "LEVEL" && (
+            <p>✅ Unlocked Level {xpAwarded}</p>
           )}
-          {activity.type === "transaction" && <p>💸 {activity.description}</p>}
+          {activityType === "TRANSACTION" && <p>💸 {activityDescription}</p>}
           <span className="text-xs">
-            {new Date(activity.createdAt).toLocaleString()}
+            {new Date(createdAt).toLocaleString()}
           </span>
         </li>
       ))}

@@ -53,7 +53,7 @@ export default function Sidebar() {
         ) : (
           <Badge variant="secondary">
             Coins: <Coins className="inline text-yellow-400" />{" "}
-            {userCoins?.coins ?? 0}
+            {userCoins?.balance ?? 0}
           </Badge>
         )}
       </div>
