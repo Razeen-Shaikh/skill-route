@@ -29,7 +29,6 @@ export default function Leaderboard(): JSX.Element {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
 
-  const userId = session?.user?.id;
   const isAuthenticated = status === "authenticated";
 
   const { data: leaderboardData, isLoading: isLeaderboardLoading } = useQuery({
@@ -75,7 +74,7 @@ export default function Leaderboard(): JSX.Element {
           {paginatedData?.map((leader, index) => (
             <TableRow
               key={leader.id}
-              className={`hover:bg-muted ${leader.id === session?.user?.id ? "bg-blue-50 font-semibold" : ""
+              className={`hover:bg-muted ${leader.id === session?.user?.id ? "bg-blue-50 font-semibold dark:bg-zinc-800" : ""
                 }`}
             >
               <TableCell className="text-center">{(index + 1) + (currentPage - 1) * itemsPerPage}</TableCell>
