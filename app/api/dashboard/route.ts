@@ -15,25 +15,26 @@ export async function GET(req: Request) {
             include: {
                 profile: {
                     include: {
-                        transactions: true,
+                        coinTransaction: true,
+                        progress: {
+                            include: {
+                                tutorial: true,
+                            },
+                        },
+                        quizAttempts: {
+                            include: {
+                                quiz: true,
+                            },
+                        },
+                        userBadges: {
+                            include: {
+                                badge: true,
+                            },
+                        },
+                        streaks: true,
+                        lastActivities: true,
                     }
                 },
-                progress: {
-                    include: {
-                        tutorial: true,
-                    },
-                },
-                quizAttempts: {
-                    include: {
-                        quiz: true,
-                    },
-                },
-                badges: {
-                    include: {
-                        badge: true,
-                    },
-                },
-                streaks: true,
             },
         });
 

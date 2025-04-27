@@ -1,0 +1,41 @@
+/* styles/Tree.module.css */
+.tree {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+  }
+  
+  .node-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px;
+  }
+  
+  .node {
+    background-color: #0085ca;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+    font-weight: bold;
+  }
+  
+  .node:hover {
+    background-color: #0073b0;
+  }
+  
+  .children {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 20px;
+  }
+  
+  .info {
+    margin-top: 20px;
+    font-size: 16px;
+    color: #444;
+  }
+  

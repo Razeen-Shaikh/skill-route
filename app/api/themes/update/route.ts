@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { authMiddleware } from "@/lib/middleware/auth";
+import { authMiddleware } from "@/lib/middleware/authMiddleware";
 
 export async function POST(req: NextRequest) {
     const authResponse = await authMiddleware(req);
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
         });
 
         return NextResponse.json({ message: "Theme updated!" });
-    } catch (error) {
+    } catch {
         return NextResponse.json({ error: "Failed to update theme" }, { status: 500 });
     }
 }

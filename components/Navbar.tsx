@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Menu, X, LogOut, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -17,11 +17,9 @@ import { Button } from "@/components/ui/button";
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { data: session } = useSession();
-  const router = useRouter();
 
   const logOut = () => {
-    signOut();
-    router.push("/");
+    signOut({ callbackUrl: "/" });
   };
 
   return (
@@ -31,9 +29,8 @@ export default function Navbar() {
           {/* Logo */}
           <Link
             href="/"
-            className="text-xl font-bold text-gray-900 dark:text-white"
-          >
-            🚀 SkillRoute
+            className="text-xl font-bold text-gray-900 dark:text-white cursor-pointer flex items-center">
+            <Image src="/favicon.ico" alt="SkillRoute" width={32} height={32} /><span className="ml-2">SkillRoute</span>
           </Link>
 
           {/* Desktop Menu */}
@@ -47,7 +44,10 @@ export default function Navbar() {
             {session ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
                     <User className="w-5 h-5" />
                     {session?.user?.name || "Profile"}
                   </Button>
@@ -90,7 +90,7 @@ export default function Navbar() {
               {session ? (
                 <button
                   onClick={() => logOut()}
-                  className="block w-full text-left px-3 py-2 rounded-md text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-800"
+                  className="block w-full text-left px-3 py-2 rounded-md text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-800 cursor-pointer"
                 >
                   Logout
                 </button>
@@ -101,7 +101,7 @@ export default function Navbar() {
           )}
         </AnimatePresence>
       </div>
-    </nav>
+    </nav >
   );
 }
 
@@ -114,7 +114,7 @@ const NavLink = ({
 }) => (
   <Link
     href={href}
-    className="block px-3 py-2 rounded-md text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-800"
+    className="block px-3 py-2 rounded-md text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-800 cursor-pointer"
   >
     {children}
   </Link>

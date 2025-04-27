@@ -1,6 +1,21 @@
 import { Button } from "@/components/ui/button";
-import { Tutorial, UserProgress } from "@/lib/interface";
+import { Tutorial, UserProgress } from "@/lib/interfaces";
 
+/**
+ * A component that displays a header with two buttons:
+ * - A 'Next' button to proceed to the next tutorial
+ * - A 'Finish & Proceed' button to mark the current tutorial as completed
+ *
+ * @param {() => void} handleNext
+ * @param {() => void} handleFinishTutorial
+ * @param {boolean} hasCompletedQuizzes Whether the user has completed all quizzes in the current tutorial
+ * @param {boolean} isLastTutorial Whether the current tutorial is the last one
+ * @param {string} nextButtonLabel The label to be displayed on the 'Next' button
+ * @param {{ status: string }} updateProgressMutation The mutation object returned by `useMutation` for updating the user's progress
+ * @param {UserProgress} progress The user's progress for the current tutorial
+ * @param {Tutorial} tutorial The tutorial object
+ * @returns {React.ReactElement}
+ */
 export default function TutorialHeader({
   handleNext,
   handleFinishTutorial,

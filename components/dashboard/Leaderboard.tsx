@@ -2,7 +2,6 @@
 
 import { JSX, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Coins, Star } from "lucide-react";
 import {
   TableHeader,
   TableRow,
@@ -10,8 +9,11 @@ import {
   TableBody,
   Table,
 } from "../ui/table";
-import { calculateRank } from "@/lib/helper";
-import { User } from "@/lib/interface";
+import { fetchLeaderboard } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { getRankColor } from "@/lib/helper";
 
 const itemsPerPage = 10;
 
@@ -22,64 +24,92 @@ const itemsPerPage = 10;
  * @prop {UserProfile[]} leaderboardData - The leaderboard data to display.
  * @returns {JSX.Element}
  */
-export default function Leaderboard({
-  leaderboardData,
-}: {
-  leaderboardData: User[];
-}): JSX.Element {
+export default function Leaderboard(): JSX.Element {
+  const { data: session, status } = useSession();
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
 
+  const isAuthenticated = status === "authenticated";
+
+  const { data: leaderboardData, isLoading: isLeaderboardLoading } = useQuery({
+    queryKey: ["leaderboard"],
+    queryFn: () => fetchLeaderboard(),
+    enabled: !!isAuthenticated,
+    refetchOnWindowFocus: false,
+  });
+
   // Calculate the total number of pages
   useEffect(() => {
-    setTotalPages(Math.ceil(leaderboardData.length / itemsPerPage));
+    setTotalPages(Math.ceil((leaderboardData?.length ?? 0) / itemsPerPage));
   }, [leaderboardData]);
 
-  // Calculate the paginated data
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-    return leaderboardData.slice(start, end);
+    return leaderboardData?.slice(start, end);
   }, [currentPage, leaderboardData]);
+
+  if (isLeaderboardLoading) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <span className="text-gray-500">Loading...</span>
+      </div>
+    );
+  }
 
   return (
     <>
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableCell>#</TableCell>
-            <TableCell>Rank</TableCell>
+          <TableRow className="bg-muted">
+            <TableCell className="w-12 text-center">#</TableCell>
             <TableCell>Name</TableCell>
-            <TableCell>XP</TableCell>
-            <TableCell>Coins</TableCell>
+            <TableCell className="text-center">Rank</TableCell>
+            <TableCell className="text-center">Level</TableCell>
+            <TableCell className="text-center">XP</TableCell>
+            <TableCell className="text-center">Coins</TableCell>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {paginatedData?.map((leader: User, index: number) => (
-            <TableRow key={leader.id}>
-              <TableCell>{index + 1}</TableCell>
-              <TableCell>
-                <span>{calculateRank(leader?.profile?.points ?? 0)}</span>
+          {paginatedData?.map((leader, index) => (
+            <TableRow
+              key={leader.id}
+              className={`hover:bg-muted ${leader.id === session?.user?.id ? "bg-blue-50 font-semibold dark:bg-zinc-800" : ""
+                }`}
+            >
+              <TableCell className="text-center">{(index + 1) + (currentPage - 1) * itemsPerPage}</TableCell>
+              <TableCell className="flex items-center space-x-3">
+                <Avatar className="w-9 h-9">
+                  <AvatarImage src={leader.avatar} />
+                  <AvatarFallback>
+                    {leader.firstName?.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="text-sm font-medium">
+                    {leader.firstName} {leader.lastName}
+                  </div>
+                </div>
               </TableCell>
-              <TableCell>
-                <span>{leader.firstName}</span>
-                <span className="ml-2">{leader.lastName}</span>
+              <TableCell className="text-center">
+                <span
+                  className={`px-2 py-1 text-xs rounded-full ${getRankColor(leader.rank)
+                    }`}
+                >
+                  {leader.rank}
+                </span>
               </TableCell>
-              <TableCell>
-                <Star className="inline text-blue-500" />
-                <span className="ml-2">{leader?.profile?.points}</span>
-              </TableCell>
-              <TableCell>
-                <Coins className="inline text-yellow-400" />
-                <span className="ml-2">{leader?.profile?.coins}</span>
-              </TableCell>
+              <TableCell className="text-center">{leader.level}</TableCell>
+              <TableCell className="text-center">{leader.xp}</TableCell>
+              <TableCell className="text-center">{leader.coins}</TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
 
+
       {/* Pagination */}
-      <div className="flex justify-between items-center mt-4">
+      <div className="flex justify-between items-center mt-4" >
         <Button
           variant="outline"
           disabled={currentPage === 1}

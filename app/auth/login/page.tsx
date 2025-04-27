@@ -57,14 +57,14 @@ const Login = () => {
         <div className="flex flex-col space-y-3">
           <button
             onClick={() => handleOAuthLogin("google")}
-            className="flex items-center justify-center bg-white text-black py-3 rounded-lg shadow hover:scale-105 transition transform duration-200"
+            className="flex items-center justify-center bg-white text-black py-3 rounded-lg shadow hover:scale-105 transition transform duration-200 cursor-pointer"
             aria-label="Login with Google"
           >
             <FaGoogle className="mr-2" /> Continue with Google
           </button>
           <button
             onClick={() => handleOAuthLogin("github")}
-            className="flex items-center justify-center bg-gray-900 text-white py-3 rounded-lg shadow hover:scale-105 transition transform duration-200"
+            className="flex items-center justify-center bg-gray-900 text-white py-3 rounded-lg shadow hover:scale-105 transition transform duration-200 cursor-pointer"
             aria-label="Login with GitHub"
           >
             <FaGithub className="mr-2" /> Continue with GitHub
@@ -118,7 +118,7 @@ const Login = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="bg-primary text-primary-foreground py-3 rounded-lg hover:scale-105 transition transform duration-200 disabled:bg-gray-400 flex items-center justify-center"
+            className="bg-primary text-primary-foreground py-3 rounded-lg hover:scale-105 transition transform duration-200 disabled:bg-gray-400 flex items-center justify-center cursor-pointer"
             disabled={isLoading}
             aria-label="Login"
           >

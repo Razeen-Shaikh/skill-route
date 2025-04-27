@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
-import { Tutorial } from "@/lib/interface";
 import { useRouter } from "next/navigation";
+import { Tutorial } from "@/lib/interfaces";
 
 /**
  * A card component representing a tutorial.

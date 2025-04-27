@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchTransactions } from "@/lib/api";
 import { format } from "date-fns";
-import { CoinTransaction, TransactionType } from "@prisma/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,21 +13,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSession } from "next-auth/react";
+import { CoinTransaction, TransactionType } from "@/lib/interfaces";
 
 export default function TransactionHistory() {
   const [page, setPage] = useState(1);
-  const [limit] = useState(5); // Transactions per page
+  const [limit] = useState(5);
   const [filter, setFilter] = useState<TransactionType>("ALL");
+
+  const { status } = useSession();
+  const isAuthenticated = status === "authenticated";
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["transactions", page, filter],
     queryFn: () => fetchTransactions({ page, limit, filter }),
+    enabled: !!isAuthenticated,
+    refetchOnWindowFocus: false,
   });
 
   if (isLoading) return <p>Loading transactions...</p>;
   if (error) return <p>Failed to load transactions.</p>;
-
-  const { transactions, totalPages } = data || {};
 
   return (
     <Card className="p-4">
@@ -41,7 +45,7 @@ export default function TransactionHistory() {
           <Select
             value={filter}
             onValueChange={(value) =>
-              setFilter(value as "ALL" | "EARNED" | "SPENT")
+              setFilter(value as TransactionType)
             }
           >
             <SelectTrigger className="w-40">
@@ -50,20 +54,21 @@ export default function TransactionHistory() {
             <SelectContent>
               <SelectItem value="ALL">All</SelectItem>
               <SelectItem value="EARNED">Earned</SelectItem>
+              <SelectItem value="PENALTY">Penalty</SelectItem>
               <SelectItem value="SPENT">Spent</SelectItem>
+              <SelectItem value="REWARD">Reward</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Transactions List */}
         <ul className="space-y-2">
-          {transactions?.map((txn: CoinTransaction) => (
+          {data?.transactions?.map((txn: CoinTransaction) => (
             <li key={txn.id} className="flex justify-between border-b pb-2">
               <span>{txn.description}</span>
               <span
-                className={`font-bold ${
-                  txn.type === "EARNED" ? "text-green-500" : "text-red-500"
-                }`}
+                className={`font-bold ${txn.type === "EARNED" ? "text-green-500" : "text-red-500"
+                  }`}
               >
                 {txn.type === "EARNED" ? "+" : "-"}
                 {txn.amount}
@@ -85,11 +90,11 @@ export default function TransactionHistory() {
             Previous
           </Button>
           <span>
-            Page {page} of {totalPages || 1}
+            Page {page} of {data?.totalPages || 1}
           </span>
           <Button
             variant="outline"
-            disabled={page === totalPages}
+            disabled={page === data?.totalPages}
             onClick={() => setPage((prev) => prev + 1)}
           >
             Next

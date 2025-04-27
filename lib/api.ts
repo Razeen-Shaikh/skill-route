@@ -1,5 +1,124 @@
+import { User, Tutorial, Quiz, UserProfile, UserProgress, UserBadge, ThemeName, LastActivity, Roadmap, CoinTransaction, UserQuizAttempt, CoinWallet, TransactionType, ActivityType } from "@/lib/interfaces";
 import axios from "axios";
-import { Quiz, Tutorial, User, UserBadge, UserProgress, UserQuizAttempt } from "./interface";
+
+export interface LeaderBoard {
+    id: string;
+    firstName: string;
+    lastName: string;
+    avatar: string;
+    rank: string;
+    xp: number;
+    coins: number;
+    level: number;
+}
+
+export interface DashboardProfile extends Omit<UserProfile, "lastActivities" | "quizAttempts" | "userBadges" | "coinTransaction"> {
+    email: string;
+    firstName: string;
+    lastName: string;
+    username: string | null;
+    emailVerified: boolean | null;
+    provider: string | null;
+
+    coins: number;
+
+    transactions: {
+        transactionId: string;
+        transactionType: TransactionType;
+        transactionAmount: number;
+        transactionDescription: string;
+        transactionDate: Date;
+    }[];
+
+    tutorialProgress: {
+        tutorialId: string;
+        tutorialTitle: string | null;
+        completed: boolean;
+        completedAt: Date | null;
+        percentageCompleted: number;
+        bestScore: number;
+        attempts: number;
+        challengeCompleted: boolean;
+        interviewCompleted: boolean;
+    }[];
+
+    quizAttempts: {
+        quizAttemptId: string;
+        quizId: string;
+        quizTitle: string | null;
+        score: number;
+        isPassed: boolean;
+        feedback: string;
+        completedAt: Date;
+    }[];
+
+    earnedBadges: {
+        badgeId: string;
+        badgeName: string | null;
+        badgeImage: string | null;
+        badgeDescription: string | null;
+        earnedAt: string | null;
+    }[];
+
+    streakCount: number;
+    streakDays: number;
+    longestStreak: number;
+    lastStreakLogin: string | null;
+    streakStart: string | null;
+    streakEnd: string | null;
+    longestStreakStart: string | null;
+    longestStreakEnd: string | null;
+
+    lastActivities: {
+        activityId: string;
+        activityType: ActivityType;
+        activityDescription: string;
+        xpAwarded: number;
+        createdAt: Date;
+        quizId: string | null;
+        tutorialId: string | null;
+        roadmapId: string | null;
+        roadmapStepId: string | null;
+    }[];
+    totalTutorials: number;
+    totalQuizzes: number;
+}
+
+export interface AdminDashboard {
+    stats: {
+        users: number;
+        tutorials: number;
+        quizzes: number;
+        paths: number;
+    };
+    topUsers: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        profile: {
+            xp: number;
+            level: number;
+            rank: string;
+            completedQuizzes: string[];
+            completedTutorials: string[];
+            completedRoadmaps: string[];
+            completedSteps: string[];
+            completedChallenges: string[];
+            completedInterviews: string[];
+            completedProjects: string[];
+        };
+    }[];
+    recentActivities: {
+        id: string;
+        action: string;
+        timestamp: string;
+        admin: {
+            firstName: string;
+            lastName: string;
+        };
+    }[];
+}
 
 const API_BASE_URL = "/api";
 
@@ -39,49 +158,69 @@ const putData = async <T>(url: string, body: object) => {
     }
 };
 
-// Fetch functions
+/** Fetch functions **/
 const fetchUserData = () => fetchData<User>("/user");
 const fetchTutorials = () => fetchData<Tutorial[]>("/tutorials");
-const fetchTutorial = (id: number) => fetchData<Tutorial>(`/tutorials/${id}`);
-const fetchQuiz = (id: number) => fetchData<Quiz>(`/quizzes/${id}`);
-const fetchUserProgress = (userId: number, tutorialId: number) => fetchData<UserProgress>(`/tutorials/progress`, { userId, tutorialId });
+const fetchTutorial = (tutorialId: string) => fetchData<Tutorial>(`/tutorial?tutorialId=${tutorialId}`);
+const fetchQuizzes = () => fetchData<Quiz[]>('/quizzes');
+const fetchQuiz = (quizId: string) => fetchData<Quiz>(`/quiz?quizId=${quizId}`);
+const fetchUserProgress = (userId: string, tutorialId: string) => fetchData<UserProgress>(`/tutorials/progress`, { userId, tutorialId });
 const fetchDashboardData = (email: string) => fetchData<User>(`/dashboard`, { email });
-const fetchBadges = (userId: number) => fetchData<UserBadge[]>(`/badges`, { userId });
-const fetchLeaderboard = () => fetchData<User[]>(`/leaderboard`);
-const fetchTheme = (userId: number) => fetchData(`/profile/theme`, { userId });
-const fetchUserCoins = (userId: number) => fetchData<{ coins: number }>(`/profile/coins`, { userId });
+const fetchBadges = (userId: string) => fetchData<UserBadge[]>(`/badges`, { userId });
+const fetchLeaderboard = () => fetchData<LeaderBoard[]>(`/leaderboard`);
+const fetchTheme = () => fetchData<ThemeName>(`/profile/theme`);
+const fetchUserCoins = (userId: string) => fetchData<CoinWallet>(`/coins`, { userId });
+const fetchLastActivity = () => fetchData<LastActivity[]>('/lastActivity');
+/**
+ * Fetches data for the admin dashboard.
+ * @returns {Promise<AdminDashboard[]>} The promise resolves to an array of AdminDashboard objects.
+ */
+const fetchAdminDashboard = () => fetchData<AdminDashboard>('/admin/dashboard');
+const fetchRoadmaps = () => fetchData<Roadmap[]>('/roadmaps');
+export const fetchProfile = () => fetchData<DashboardProfile>('/profile')
 
 const fetchTransactions = async ({ page, limit, filter }: { page: number; limit: number; filter: string }) => {
-    return fetchData(`/transactions`, { page, limit, filter: filter !== "ALL" ? filter : undefined });
+    return fetchData<{ transactions: CoinTransaction[]; totalPages: number }>(`/transactions`, { page, limit, filter: filter !== "ALL" ? filter : undefined });
 };
 
-const fetchQuizAttempts = (quizIds: number[]) => fetchData<{ quizId: number }[]>(`/quiz/attempts`, { quizIds: quizIds.join(",") });
+const fetchQuizAttempts = (quizIds: string[]) => fetchData<{ quizId: string, score: number, completedAt: string }[]>(`/quiz/attempts`, { quizIds: quizIds.join(",") });
 
-// Update functions
-const updateProfile = (userId: number, avatar: string, theme: string) => putData(`/profile`, { userId, avatarUrl: avatar, theme });
-const submitQuizAttempt = (userId: number, quizId: number, attempts: { questionId: number; selectedOption: string }[]) => postData<UserQuizAttempt>(`/quiz/submit`, { userId, quizId, attempts });
-const updateRewards = (userId: number) => postData(`/rewards`, { userId });
-const updateStreak = (userId: number) => postData(`/streak`, { userId });
-const updateTheme = (userId: number, newTheme: string) => putData(`/profile/theme`, { userId, theme: newTheme });
-const updateProgress = (userId: number, tutorialId: number, percentageCompleted: number) => putData(`/tutorials/progress`, { userId, tutorialId, percentageCompleted });
+/** Update functions **/
+const updateProfile = (userId: string, avatar: string, theme: string) => putData(`/profile`, { userId, avatarUrl: avatar, theme });
+const updateRewards = () => postData<{ reward: number; message: string }>(`/rewards`, {});
+const updateStreak = (userId: string) => postData(`/streak`, { userId });
+const updateTheme = (newTheme: string) => putData<ThemeName>(`/profile/theme`, { theme: newTheme });
+const updateProgress = (userId: string, tutorialId: string, percentageCompleted: number) => putData(`/tutorials/progress`, { userId, tutorialId, percentageCompleted });
+const markComplete = (roadmapId: string) => postData(`/roadmap/complete`, { id: roadmapId });
+
+/** Create functions **/
+const submitQuizAttempt = (quizId: string, attempts: { questionId: string; selectedOption: string }[]) => postData<UserQuizAttempt>(`/quiz/submit`, { quizId, attempts });
+const registerUser = async (name: string, email: string, password: string) => postData(`/auth/register`, { name, email, password });
+
 
 export {
     fetchUserData,
     fetchTutorials,
     fetchTutorial,
+    fetchQuizzes,
     fetchQuiz,
     fetchUserProgress,
     fetchDashboardData,
     fetchBadges,
     fetchLeaderboard,
+    fetchAdminDashboard,
     fetchTheme,
     fetchUserCoins,
+    fetchLasttActivity,
     fetchTransactions,
     fetchQuizAttempts,
+    fetchRoadmaps,
     updateProfile,
     submitQuizAttempt,
     updateRewards,
     updateStreak,
     updateTheme,
     updateProgress,
+    markComplete,
+    registerUser
 };
