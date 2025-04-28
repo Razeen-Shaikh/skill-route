@@ -87,6 +87,9 @@
     "typescript": "^5.8.3"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "engines": {
+      "query-engine": "node_modules/.prisma/client/query-engine-linux"
+    }
   }
 }
