@@ -211,7 +211,7 @@ export {
     fetchAdminDashboard,
     fetchTheme,
     fetchUserCoins,
-    fetchLasttActivity,
+    fetchLastActivity,
     fetchTransactions,
     fetchQuizAttempts,
     fetchRoadmaps,
