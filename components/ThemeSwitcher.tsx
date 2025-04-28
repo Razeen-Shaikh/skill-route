@@ -16,7 +16,11 @@ export default function ThemeSwitcher() {
   const [theme, setTheme] = useState<ThemeName | undefined>(undefined);
 
   // **Step 2: Fetch theme from server**
-  const { data: fetchedTheme, isLoading, isError } = useQuery({
+  const {
+    data: fetchedTheme,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["theme"],
     queryFn: async () => fetchTheme(),
     enabled: !!isAuthenticated,
@@ -35,10 +39,7 @@ export default function ThemeSwitcher() {
   // **Step 4: Apply the correct theme**
   useEffect(() => {
     if (theme !== undefined) {
-      document.documentElement.classList.toggle(
-        "dark",
-        theme === "DARK"
-      );
+      document.documentElement.classList.toggle("dark", theme === "DARK");
     }
   }, [theme]);
 
@@ -69,8 +70,7 @@ export default function ThemeSwitcher() {
 
   // **Step 8: Toggle theme function**
   const toggleTheme = () => {
-    const newTheme =
-      theme === "LIGHT" ? "DARK" : "LIGHT";
+    const newTheme = theme === "LIGHT" ? "DARK" : "LIGHT";
     setTheme(newTheme);
     if (!!isAuthenticated) {
       updateThemeMutation.mutate(newTheme);
@@ -93,5 +93,3 @@ export default function ThemeSwitcher() {
     </button>
   );
 }
-
-
