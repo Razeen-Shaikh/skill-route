@@ -14,10 +14,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  webpack: (config, { isServer }) => {
+  webpack(config, { isServer }) {
     if (!isServer) {
-      config.node = {
-        fs: "empty",
+      config.resolve.fallback = {
+        fs: false, // This tells Webpack to avoid bundling the 'fs' module on the client side.
       };
     }
     return config;
