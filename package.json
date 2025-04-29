@@ -11,8 +11,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest --watch",
-    "postinstall": "prisma generate"
+    "test": "jest --watch"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.8.0",
@@ -91,9 +90,6 @@
     "typescript": "^5.8.3"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts",
-    "engines": {
-      "query-engine": "node_modules/.prisma/client/query-engine-linux"
-    }
+    "seed": "tsx prisma/seed.ts"
   }
 }
