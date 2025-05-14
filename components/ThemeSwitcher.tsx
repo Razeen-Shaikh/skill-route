@@ -12,10 +12,8 @@ export default function ThemeSwitcher() {
   const { status } = useSession();
   const isAuthenticated = status === "authenticated";
 
-  // **Step 1: Ensure no hydration mismatch by initializing undefined**
   const [theme, setTheme] = useState<ThemeName | undefined>(undefined);
 
-  // **Step 2: Fetch theme from server**
   const {
     data: fetchedTheme,
     isLoading,
@@ -27,7 +25,6 @@ export default function ThemeSwitcher() {
     refetchOnWindowFocus: false,
   });
 
-  // **Step 3: Set theme on client after hydration**
   useEffect(() => {
     if (fetchedTheme) {
       setTheme(fetchedTheme);
@@ -36,14 +33,12 @@ export default function ThemeSwitcher() {
     }
   }, [fetchedTheme]);
 
-  // **Step 4: Apply the correct theme**
   useEffect(() => {
     if (theme !== undefined) {
       document.documentElement.classList.toggle("dark", theme === "DARK");
     }
   }, [theme]);
 
-  // **Step 5: Mutation to update user preference**
   const updateThemeMutation = useMutation({
     mutationFn: async (newTheme: ThemeName) => updateTheme(newTheme),
     onSuccess: (newTheme) => {
@@ -52,7 +47,6 @@ export default function ThemeSwitcher() {
     },
   });
 
-  // **Step 6: Loading state before theme is set**
   if (theme === undefined || isLoading) {
     return (
       <button
@@ -65,10 +59,10 @@ export default function ThemeSwitcher() {
     );
   }
 
-  // **Step 7: Handle errors**
-  if (isError) return null;
+  if (isError) {
+    return null;
+  }
 
-  // **Step 8: Toggle theme function**
   const toggleTheme = () => {
     const newTheme = theme === "LIGHT" ? "DARK" : "LIGHT";
     setTheme(newTheme);

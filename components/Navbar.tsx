@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
-import Image from "next/image";
 import { Menu, X, LogOut, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { GiBookshelf } from "react-icons/gi";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -29,14 +29,16 @@ export default function Navbar() {
           {/* Logo */}
           <Link
             href="/"
-            className="text-xl font-bold text-gray-900 dark:text-white cursor-pointer flex items-center">
-            <Image src="/favicon.ico" alt="SkillRoute" width={32} height={32} /><span className="ml-2">SkillRoute</span>
+            className="text-xl font-bold text-gray-900 dark:text-white cursor-pointer flex items-center"
+          >
+            <GiBookshelf className="w-6 h-6" />
+            <span className="ml-2">SkillRoute</span>
           </Link>
 
           {/* Desktop Menu */}
           <div className="hidden md:flex space-x-6 items-center">
             <NavLink href="/">Home</NavLink>
-            <NavLink href="/tutorials">Tutorials</NavLink>
+            {/* <NavLink href="/tutorials">Tutorials</NavLink> */}
             <NavLink href="/quizzes">Quizzes</NavLink>
             <NavLink href="/dashboard">Dashboard</NavLink>
 
@@ -101,7 +103,7 @@ export default function Navbar() {
           )}
         </AnimatePresence>
       </div>
-    </nav >
+    </nav>
   );
 }
 

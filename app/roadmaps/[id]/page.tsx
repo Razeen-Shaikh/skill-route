@@ -7,12 +7,14 @@ import { useParams } from "next/navigation";
 import RoadmapStepUnit from "@/components/roadmaps/RoadmapStepUnit";
 import { RoadmapStep } from "@/generated/prisma";
 
-
 const RoadmapTree = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
+  const [positions, setPositions] = useState<
+    Record<string, { x: number; y: number }>
+  >({});
 
-  const { roadmapId } = useParams();
+  const { id: roadmapId } = useParams();
+
   const { steps: roadmapSteps } = useRoadmap(roadmapId as string);
 
   const levels = useMemo(() => {
@@ -26,11 +28,15 @@ const RoadmapTree = () => {
       levelMap[depth] = levelMap[depth] || [];
       levelMap[depth].push(step);
 
-      const children: RoadmapStep[] = roadmapSteps.filter((s: RoadmapStep) => s.parentId === step.id);
+      const children: RoadmapStep[] = roadmapSteps.filter(
+        (s: RoadmapStep) => s.parentId === step.id
+      );
       children.forEach((child) => assignLevels(child, depth + 1));
     };
 
-    const rootSteps = roadmapSteps.filter((step: RoadmapStep) => step.parentId === null);
+    const rootSteps = roadmapSteps.filter(
+      (step: RoadmapStep) => step.parentId === null
+    );
     rootSteps.forEach((root: RoadmapStep) => assignLevels(root, 0));
 
     return levelMap;
@@ -39,7 +45,9 @@ const RoadmapTree = () => {
   const renderConnections = () => {
     if (!roadmapSteps || !positions) return null;
     return roadmapSteps.flatMap((step: RoadmapStep) => {
-      const children = roadmapSteps.filter((s: RoadmapStep) => s.parentId === step.id);
+      const children = roadmapSteps.filter(
+        (s: RoadmapStep) => s.parentId === step.id
+      );
       return children.map((child: RoadmapStep) => {
         const from = positions[step.id];
         const to = positions[child.id];
@@ -53,13 +61,18 @@ const RoadmapTree = () => {
             y1={from.y}
             x2={to.x}
             y2={to.y}
-            stroke={child.status === "COMPLETED" ? "#ffffff" : "#999999"}
+            stroke={
+              child.status === "COMPLETED"
+                ? "var(--stroke-color-completed)"
+                : "var(--stroke-color-pending)"
+            }
             strokeDasharray={child.status === "COMPLETED" ? "0" : "5"}
             strokeWidth={2}
             strokeLinecap="round"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
+            className="dark:stroke-white stroke-gray-400"
           />
         );
       });
@@ -70,7 +83,8 @@ const RoadmapTree = () => {
     if (!containerRef.current) return;
 
     setTimeout(() => {
-      const elements = containerRef.current?.querySelectorAll(".roadmap-step") || [];
+      const elements =
+        containerRef.current?.querySelectorAll(".roadmap-step") || [];
       const newPositions: Record<string, { x: number; y: number }> = {};
       const parentRect = containerRef.current?.getBoundingClientRect();
       if (!parentRect) return;
@@ -94,7 +108,7 @@ const RoadmapTree = () => {
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-screen flex flex-col items-center justify-start p-8 overflow-auto bg-black text-white"
+      className="relative w-full h-screen flex flex-col items-center justify-start p-8 overflow-y-auto"
     >
       <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
         {renderConnections()}
@@ -106,7 +120,11 @@ const RoadmapTree = () => {
           className="flex flex-wrap justify-center gap-10 my-8 w-full max-w-6xl"
         >
           {steps.map((step) => (
-            <RoadmapStepUnit key={step.id} step={step} roadmapSteps={roadmapSteps} />
+            <RoadmapStepUnit
+              key={step.id}
+              step={step}
+              roadmapSteps={roadmapSteps}
+            />
           ))}
         </div>
       ))}
