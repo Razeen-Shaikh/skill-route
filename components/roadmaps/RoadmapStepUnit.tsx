@@ -25,8 +25,16 @@ const RoadmapStepUnit = ({
         .every((parent) => parent.completed));
 
   const handleClick = () => {
-    if (isUnlocked && step.title) {
-      router.push(`/tutorials/${step.title}`);
+    if (!isUnlocked) return;
+
+    const tutorialId = step.tutorials?.[0]?.id;
+    if (tutorialId) {
+      router.push(`/tutorials/${tutorialId}`);
+      return;
+    }
+
+    if (step.title) {
+      router.push(`/tutorials/${encodeURIComponent(step.title)}`);
     }
   };
 

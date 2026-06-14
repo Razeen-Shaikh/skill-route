@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { AUTH_REGISTER_PATH } from "@/lib/authNav";
 
 export default function Home() {
   const { status } = useSession();
@@ -77,13 +78,13 @@ export default function Home() {
       <section className="w-full py-12 text-center bg-accent text-accent-foreground">
         <h2 className="text-2xl font-bold mb-4">Start Your Journey Today!</h2>
         <p className="text-muted-foreground">
-          Sign up now and take your skills to the next level.
+          Register now and take your skills to the next level.
         </p>
         {!isAuthenticated && (
           <div className="mt-6">
-            <Link href="/auth/register">
+            <Link href={AUTH_REGISTER_PATH}>
               <button className="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold hover:bg-primary/80 shadow-lg transition cursor-pointer">
-                Sign Up Now
+                Register
               </button>
             </Link>
           </div>

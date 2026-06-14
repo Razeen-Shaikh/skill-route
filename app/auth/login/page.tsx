@@ -10,8 +10,10 @@ import {
   FaSpinner,
 } from "react-icons/fa";
 import Link from "next/link";
+import { getAuthAlternateLink } from "@/lib/authNav";
 
 const Login = () => {
+  const alternateAuthLink = getAuthAlternateLink("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -60,14 +62,14 @@ const Login = () => {
             className="flex items-center justify-center bg-white text-black py-3 rounded-lg shadow hover:scale-105 transition transform duration-200 cursor-pointer"
             aria-label="Login with Google"
           >
-            <FaGoogle className="mr-2" /> Continue with Google
+            <FaGoogle className="mr-2" /> Login with Google
           </button>
           <button
             onClick={() => handleOAuthLogin("github")}
             className="flex items-center justify-center bg-gray-900 text-white py-3 rounded-lg shadow hover:scale-105 transition transform duration-200 cursor-pointer"
             aria-label="Login with GitHub"
           >
-            <FaGithub className="mr-2" /> Continue with GitHub
+            <FaGithub className="mr-2" /> Login with GitHub
           </button>
         </div>
 
@@ -128,12 +130,12 @@ const Login = () => {
 
         {/* Bottom Text */}
         <p className="text-center text-muted-foreground mt-4">
-          Don&apos;t have an account?{" "}
+          {alternateAuthLink.prompt}{" "}
           <Link
-            href="/auth/register"
+            href={alternateAuthLink.href}
             className="underline text-primary hover:text-primary/80"
           >
-            Sign up
+            {alternateAuthLink.label}
           </Link>
         </p>
       </div>

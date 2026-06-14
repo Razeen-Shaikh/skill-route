@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { findTutorialByIdentifier } from '@/lib/resolveTutorial';
 
 export async function GET(req: NextRequest) {
     try {
@@ -9,12 +9,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: 'tutorialId is required' }, { status: 400 });
         }
 
-        const tutorialId = tutorialParam;
-
-        const tutorial = await prisma.tutorial.findUnique({
-            where: { id: tutorialId },
-            include: { quizzes: { include: { questions: true, attempts: true } }, progress: true },
-        });
+        const tutorial = await findTutorialByIdentifier(tutorialParam);
 
         if (!tutorial) {
             return NextResponse.json(

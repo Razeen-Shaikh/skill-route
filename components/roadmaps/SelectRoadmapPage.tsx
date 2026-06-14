@@ -44,7 +44,7 @@ const SelectRoadmapPage = () => {
           Select a Roadmap
         </h1>
 
-        <div className="container flex flex-wrap gap-6 mx-auto justify-center overflow-y-auto max-h-[calc(100vh-200px)]">
+        <div className="container flex flex-wrap gap-6 mx-auto justify-center pt-2 overflow-y-auto max-h-[calc(100vh-200px)]">
           {roadmaps.map((roadmap) => (
             <motion.div
               key={roadmap.id}

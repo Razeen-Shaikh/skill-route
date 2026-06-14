@@ -11,8 +11,10 @@ import {
   FaSpinner,
 } from "react-icons/fa";
 import Link from "next/link";
+import { getAuthAlternateLink } from "@/lib/authNav";
 
 const Register = () => {
+  const alternateAuthLink = getAuthAlternateLink("register");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,7 +53,7 @@ const Register = () => {
     try {
       await signIn(provider, { callbackUrl: "/auth/login" });
     } catch {
-      setError("OAuth sign-in failed. Try again.");
+      setError("OAuth login failed. Try again.");
     } finally {
       setIsLoading(false);
     }
@@ -74,16 +76,16 @@ const Register = () => {
           <button
             onClick={() => handleOAuthRegister("google")}
             className="flex items-center justify-center bg-white text-black py-3 rounded-lg shadow hover:scale-105 transition transform duration-200 cursor-pointer"
-            aria-label="Sign up with Google"
+            aria-label="Register with Google"
           >
-            <FaGoogle className="mr-2" /> Sign up with Google
+            <FaGoogle className="mr-2" /> Register with Google
           </button>
           <button
             onClick={() => handleOAuthRegister("github")}
             className="flex items-center justify-center bg-gray-900 text-white py-3 rounded-lg shadow hover:scale-105 transition transform duration-200 cursor-pointer"
-            aria-label="Sign up with GitHub"
+            aria-label="Register with GitHub"
           >
-            <FaGithub className="mr-2" /> Sign up with GitHub
+            <FaGithub className="mr-2" /> Register with GitHub
           </button>
         </div>
 
@@ -134,19 +136,19 @@ const Register = () => {
             type="submit"
             className="bg-primary text-primary-foreground py-3 rounded-lg hover:scale-105 transition transform duration-200 disabled:bg-gray-400 flex items-center justify-center cursor-pointer"
             disabled={isLoading}
-            aria-label="Sign up"
+            aria-label="Register"
           >
-            {isLoading ? <FaSpinner className="animate-spin" /> : "Sign Up"}
+            {isLoading ? <FaSpinner className="animate-spin" /> : "Register"}
           </button>
         </form>
 
         <p className="text-center text-muted-foreground mt-4">
-          Already have an account?{" "}
+          {alternateAuthLink.prompt}{" "}
           <Link
-            href="/auth/login"
+            href={alternateAuthLink.href}
             className="underline text-primary hover:text-primary/80"
           >
-            Sign in
+            {alternateAuthLink.label}
           </Link>
         </p>
       </div>

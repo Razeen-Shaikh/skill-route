@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { GiBookshelf } from "react-icons/gi";
+import AuthNavLink from "@/components/AuthNavLink";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -62,7 +63,7 @@ export default function Navbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <NavLink href="/auth/login">Login</NavLink>
+              <AuthNavLink />
             )}
           </div>
 
@@ -97,7 +98,7 @@ export default function Navbar() {
                   Logout
                 </button>
               ) : (
-                <NavLink href="/auth/login">Login</NavLink>
+                <AuthNavLink />
               )}
             </motion.div>
           )}

@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
+import { useEffect } from "react";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import InterviewSection from "@/components/tutorials/InterviewSection";
 import { fetchTutorial, fetchUserProgress, updateProgress } from "@/lib/api";
@@ -10,6 +11,7 @@ import LockedTutorial from "@/components/tutorials/LockedTutorial";
 import TutorialHeader from "@/components/tutorials/TutorialHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { AUTH_LOGIN_PATH, AUTH_REGISTER_PATH } from "@/lib/authNav";
 import QuizList from "@/components/quiz/QuizList";
 
 export default function TutorialPage() {
@@ -44,6 +46,12 @@ export default function TutorialPage() {
     },
   });
 
+  useEffect(() => {
+    if (tutorial?.id && tutorialId !== tutorial.id) {
+      router.replace(`/tutorials/${tutorial.id}`);
+    }
+  }, [tutorial, tutorialId, router]);
+
   const hasCompletedQuizzes = tutorial?.quizzes.every((quiz) => quiz.attempts.length > 0);
 
   const handleNext = () => {
@@ -55,8 +63,8 @@ export default function TutorialPage() {
   const handleFinishTutorial = () => {
     const overallPercentageCompleted = tutorial && (tutorial?.quizzes?.filter((quiz) => quiz?.attempts?.length > 0).length / tutorial?.quizzes.length) * 100;
 
-    if (userId) {
-      updateProgressMutation.mutate({ tutorialId, userId, percentageCompleted: overallPercentageCompleted ?? 0, });
+    if (userId && tutorial?.id) {
+      updateProgressMutation.mutate({ tutorialId: tutorial.id, userId, percentageCompleted: overallPercentageCompleted ?? 0, });
     }
 
   };
@@ -120,12 +128,12 @@ export default function TutorialPage() {
           ) : (
             <div>
               Your learning adventure starts here —{" "}
-              <Link href="/auth/login" className="underline text-blue-500">
-                log in
+              <Link href={AUTH_LOGIN_PATH} className="underline text-blue-500">
+                Login
               </Link>{" "}
               or{" "}
-              <Link href="/auth/register" className="underline text-blue-500">
-                sign up
+              <Link href={AUTH_REGISTER_PATH} className="underline text-blue-500">
+                Register
               </Link>{" "}
               to begin!
             </div>

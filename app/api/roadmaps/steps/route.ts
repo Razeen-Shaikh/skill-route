@@ -16,6 +16,11 @@ export async function GET(req: NextRequest) {
         include: {
             parent: true,
             children: true,
+            tutorials: {
+                select: { id: true },
+                orderBy: { createdAt: "asc" },
+                take: 1,
+            },
         },
     });
 
