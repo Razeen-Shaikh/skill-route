@@ -1,4 +1,4 @@
-import { User, Tutorial, Quiz, UserProfile, UserProgress, UserBadge, ThemeName, LastActivity, Roadmap, CoinTransaction, UserQuizAttempt, CoinWallet, TransactionType, ActivityType } from "@/lib/interfaces";
+import { User, Tutorial, Quiz, UserProfile, UserProgress, UserBadge, ThemeName, LastActivity, Roadmap, CoinTransaction, CoinWallet, TransactionType, ActivityType } from "@/lib/interfaces";
 import axios from "axios";
 
 export interface LeaderBoard {

@@ -4,8 +4,7 @@ import useRoadmap from "@/hooks/useRoadmap";
 import { motion } from "framer-motion";
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import RoadmapStepUnit from "@/components/roadmaps/RoadmapStepUnit";
-import { RoadmapStep } from "@/generated/prisma";
+import RoadmapStepUnit, { RoadmapStepWithTutorials } from "@/components/roadmaps/RoadmapStepUnit";
 
 const RoadmapTree = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -18,37 +17,37 @@ const RoadmapTree = () => {
   const { steps: roadmapSteps } = useRoadmap(roadmapId as string);
 
   const levels = useMemo(() => {
-    const levelMap: Record<number, RoadmapStep[]> = {};
+    const levelMap: Record<number, RoadmapStepWithTutorials[]> = {};
     const visited = new Set<string>();
 
-    const assignLevels = (step: RoadmapStep, depth: number) => {
+    const assignLevels = (step: RoadmapStepWithTutorials, depth: number) => {
       if (visited.has(step.id)) return;
       visited.add(step.id);
 
       levelMap[depth] = levelMap[depth] || [];
       levelMap[depth].push(step);
 
-      const children: RoadmapStep[] = roadmapSteps.filter(
-        (s: RoadmapStep) => s.parentId === step.id
+      const children: RoadmapStepWithTutorials[] = roadmapSteps.filter(
+        (s: RoadmapStepWithTutorials) => s.parentId === step.id
       );
       children.forEach((child) => assignLevels(child, depth + 1));
     };
 
     const rootSteps = roadmapSteps.filter(
-      (step: RoadmapStep) => step.parentId === null
+      (step: RoadmapStepWithTutorials) => step.parentId === null
     );
-    rootSteps.forEach((root: RoadmapStep) => assignLevels(root, 0));
+    rootSteps.forEach((root: RoadmapStepWithTutorials) => assignLevels(root, 0));
 
     return levelMap;
   }, [roadmapSteps]);
 
   const renderConnections = () => {
     if (!roadmapSteps || !positions) return null;
-    return roadmapSteps.flatMap((step: RoadmapStep) => {
+    return roadmapSteps.flatMap((step: RoadmapStepWithTutorials) => {
       const children = roadmapSteps.filter(
-        (s: RoadmapStep) => s.parentId === step.id
+        (s: RoadmapStepWithTutorials) => s.parentId === step.id
       );
-      return children.map((child: RoadmapStep) => {
+      return children.map((child: RoadmapStepWithTutorials) => {
         const from = positions[step.id];
         const to = positions[child.id];
 

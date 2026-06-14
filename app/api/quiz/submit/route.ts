@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/auth';
-import { Prisma } from '@/generated/prisma';
+import { Prisma, UserQuizAttempt } from '@/generated/prisma';
 import { awardCoins, awardXp, COIN_REWARDS, ensureGamificationProfile, XP_REWARDS } from '@/lib/gamification';
 import { completeTutorialIfReady } from '@/lib/tutorialProgress';
 
@@ -45,7 +45,6 @@ export async function POST(request: NextRequest) {
         );
 
         let totalScore = 0;
-        let totalXpEarned = 0;
         const userQuestionAttempts = attempts.map(({ questionId, selectedOption }: { questionId: string; selectedOption: string }) => {
             const correctAnswer = correctAnswersMap.get(questionId);
             const isCorrect = selectedOption === correctAnswer;
@@ -53,7 +52,6 @@ export async function POST(request: NextRequest) {
 
             if (isCorrect) {
                 totalScore += xpEarned;
-                totalXpEarned += xpEarned;
             }
 
             return {
@@ -76,7 +74,7 @@ export async function POST(request: NextRequest) {
         const wasPreviouslyPassed = existingAttempt?.isPassed ?? false;
 
         const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-            let userQuizAttempt;
+            let userQuizAttempt: UserQuizAttempt;
 
             if (existingAttempt) {
                 userQuizAttempt = await tx.userQuizAttempt.update({

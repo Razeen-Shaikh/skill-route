@@ -100,8 +100,7 @@ export async function refreshUserStreak(userId: string) {
 
 export async function checkAndAwardBadges(
     tx: Prisma.TransactionClient,
-    userId: string,
-    _totalXp?: number
+    userId: string
 ) {
     return evaluateAndAwardBadges(userId, tx);
 }
@@ -113,7 +112,18 @@ export async function awardXp(
     activity: ActivityPayload
 ) {
     if (xpAmount <= 0) {
-        return { xpAwarded: 0, leveledUp: false, level: 1, rank: "Beginner" };
+        const profile = await tx.userProfile.findUnique({
+            where: { userId },
+            select: { xp: true },
+        });
+        const progress = getLevelProgressFromXp(profile?.xp ?? 0);
+        return {
+            xpAwarded: 0,
+            leveledUp: false,
+            level: progress.level,
+            rank: progress.rank,
+            totalXp: profile?.xp ?? 0,
+        };
     }
 
     const previousProfile = await tx.userProfile.findUnique({
@@ -139,7 +149,7 @@ export async function awardXp(
         },
     });
 
-    await checkAndAwardBadges(tx, userId, profile.xp);
+    await checkAndAwardBadges(tx, userId);
 
     await tx.lastActivity.create({
         data: {

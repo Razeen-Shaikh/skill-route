@@ -1,15 +1,18 @@
 import { RoadmapStep } from "@/generated/prisma";
 import { motion } from "framer-motion";
 import { Lock, CheckCircle } from "lucide-react";
-import { useRouter } from "next/navigation"; // For Next.js 13+ app directory
-// For pages directory: use `import { useRouter } from "next/router";`
+import { useRouter } from "next/navigation";
+
+export type RoadmapStepWithTutorials = RoadmapStep & {
+  tutorials?: { id: string }[];
+};
 
 const RoadmapStepUnit = ({
   step,
   roadmapSteps,
 }: {
-  step: RoadmapStep;
-  roadmapSteps: RoadmapStep[];
+  step: RoadmapStepWithTutorials;
+  roadmapSteps: RoadmapStepWithTutorials[];
 }) => {
   const router = useRouter();
 

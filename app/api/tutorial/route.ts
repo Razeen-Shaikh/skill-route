@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
 import { getAuthUser } from "@/lib/auth";
 import { enrichTutorialForUser } from "@/lib/tutorialProgress";
 import { findTutorialByIdentifier } from "@/lib/resolveTutorial";

@@ -78,7 +78,11 @@ export default function EarnedBadges({ badges }: { badges: EarnedBadge[] }) {
                                         </p>
                                         {badge.earnedAt && (
                                             <p className="text-xs mt-1">
-                                                Earned {formatDate(badge.earnedAt)}
+                                                Earned {formatDate(
+                                                    badge.earnedAt instanceof Date
+                                                        ? badge.earnedAt.toISOString()
+                                                        : badge.earnedAt
+                                                )}
                                             </p>
                                         )}
                                     </TooltipContent>
