@@ -157,6 +157,7 @@ function flattenUserProfile(userProfile: UserProfile & { user: User; coinWallet:
         // --- Badges ---
         earnedBadges: userBadges.map((b) => ({
             badgeId: b.badgeId,
+            slug: b.badge?.slug ?? b.badge?.imageUrl ?? "",
             badgeName: b.badge?.name ?? null,
             badgeImage: b.badge?.imageUrl ?? null,
             badgeDescription: b.badge?.description ?? null,

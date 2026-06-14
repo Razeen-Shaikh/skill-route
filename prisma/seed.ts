@@ -1,6 +1,7 @@
 import { getLevelFromXP, getRankFromLevelXP } from "@/lib/helper";
 import prisma from "@/lib/prisma";
-import { ActivityType, Badge, CoinTransaction, CoinWallet, LastActivity, Quiz, QuizQuestion, Roadmap, RoadmapStep, StepStatus, Tag, Tutorial, TutorialStatus, User, UserBadge, UserProfile, UserProgress, UserQuestionAttempt, UserQuizAttempt, UserRole, UserStreak } from "@/generated/prisma";
+import { ActivityType, CoinTransaction, CoinWallet, LastActivity, Quiz, QuizQuestion, Roadmap, RoadmapStep, StepStatus, Tag, Tutorial, TutorialStatus, User, UserBadge, UserProfile, UserProgress, UserQuestionAttempt, UserQuizAttempt, UserRole, UserStreak } from "@/generated/prisma";
+import { seedBadges, syncAllUserBadges } from "@/lib/seedBadges";
 import slugify from "slugify";
 import { seedHelper } from "../lib/seedHelper";
 import { quizQuestionData, quizzesData, roadmapData, tutorialsData, usersData } from "../lib/data";
@@ -223,37 +224,7 @@ async function main() {
 
     /** SEED BADGES **/
 
-    console.log('🌱 Seeding badges...');
-
-    const badgesData = Array.from({ length: 10 }, (_unused, i) => ({
-        name: `Badge ${i + 1}`,
-        imageUrl: `https://dummyimage.com/100x100/${Math.floor(Math.random() * 16777215).toString(16)}/ffffff.png&text=Badge${i + 1}`,
-        xpReq: (i + 1) * 100,
-    }));
-
-    const badges: Badge[] = [];
-
-    for (const badgeData of badgesData) {
-        const createdBadge = await prisma.badge.create({
-            data: {
-                name: badgeData.name,
-                imageUrl: badgeData.imageUrl,
-                xpReq: badgeData.xpReq,
-                description: `Description for ${badgeData.name}`,
-                createdAt: seedHelper.getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
-                updatedAt: seedHelper.getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
-            },
-        });
-        badges.push({
-            ...createdBadge,
-            id: createdBadge.id.toString(),
-            createdAt: createdBadge.createdAt,
-            updatedAt: createdBadge.updatedAt,
-        });
-    }
-
-    console.log(`🌱 Created ${badges.length} badges successfully!`);
-
+    await seedBadges();
     const badgeRecords = await prisma.badge.findMany();
 
     /** Roadmap **/
@@ -519,30 +490,6 @@ async function main() {
     console.log(`🌱 Created ${transactions.length} transactions successfully!`);
 
     const transactionRecords = await prisma.coinTransaction.findMany();
-
-    console.log('🌱 Seeding userBadges...');
-
-    const userBadgesData = Array.from({ length: userProfileRecords.length }, (_, i) => ({
-        profileId: userProfileRecords[i].userId,
-        badgeId: badgeRecords[Math.floor(Math.random() * badgeRecords.length)].id,
-        earnedAt: seedHelper.getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
-        createdAt: seedHelper.getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
-        updatedAt: seedHelper.getRandomDate(new Date(2022, 0, 1), new Date(2024, 11, 31)),
-    }));
-
-    const userBadges: UserBadge[] = [];
-
-    for (const userBadge of userBadgesData) {
-        const createUserBadge = await prisma.userBadge.create({
-            data: userBadge,
-        });
-
-        userBadges.push({ ...createUserBadge });
-    }
-
-    console.log(`🌱 Created ${userBadgesData.length} user badges successfully!`);
-
-    // const userBadgeRecords = await prisma.userBadge.findMany();
 
     console.log('🌱 Seeding streaks...');
 
@@ -835,6 +782,9 @@ async function main() {
     }
 
     console.log(`🌱 Created ${lastActivities.length} last activities successfully!`);
+
+    console.log('🌱 Syncing user badges from activity...');
+    await syncAllUserBadges();
 
     /** SEEDING COMPLETED **/
 

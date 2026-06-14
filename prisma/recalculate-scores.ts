@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { getLevelProgressFromXp } from "@/lib/helper";
 import { COIN_REWARDS, ensureGamificationProfile, XP_REWARDS } from "@/lib/gamification";
+import { evaluateAndAwardBadges } from "@/lib/badgeEvaluation";
 import { areAllQuizzesPassed } from "@/lib/tutorialProgress";
 import { TransactionType } from "@/generated/prisma";
 
@@ -200,22 +201,9 @@ async function calculateTotalCoins(
     return coins;
 }
 
-async function recalculateBadges(userId: string, totalXp: number) {
-    const eligibleBadges = await prisma.badge.findMany({
-        where: { xpReq: { lte: totalXp } },
-    });
-
+async function recalculateBadges(userId: string) {
     await prisma.userBadge.deleteMany({ where: { profileId: userId } });
-
-    if (eligibleBadges.length > 0) {
-        await prisma.userBadge.createMany({
-            data: eligibleBadges.map((badge) => ({
-                profileId: userId,
-                badgeId: badge.id,
-            })),
-            skipDuplicates: true,
-        });
-    }
+    await evaluateAndAwardBadges(userId);
 }
 
 async function recalculateUser(userId: string) {
@@ -245,7 +233,7 @@ async function recalculateUser(userId: string) {
         },
     });
 
-    await recalculateBadges(userId, totalXp);
+    await recalculateBadges(userId);
 
     const earnedCoins = await calculateTotalCoins(
         userId,

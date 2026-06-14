@@ -42,6 +42,7 @@ export default function Navbar() {
             <NavLink href={homeHref}>Home</NavLink>
             {/* <NavLink href="/tutorials">Tutorials</NavLink> */}
             <NavLink href="/quizzes">Quizzes</NavLink>
+            {session && <NavLink href="/badges">Badges</NavLink>}
             <NavLink href="/dashboard">Dashboard</NavLink>
 
             {/* Auth Actions */}
@@ -90,6 +91,7 @@ export default function Navbar() {
               <NavLink href={homeHref}>Home</NavLink>
               <NavLink href="/tutorials">Tutorials</NavLink>
               <NavLink href="/quizzes">Quizzes</NavLink>
+              {session && <NavLink href="/badges">Badges</NavLink>}
               <NavLink href="/dashboard">Dashboard</NavLink>
               {session ? (
                 <button

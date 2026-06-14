@@ -12,6 +12,18 @@ export interface LeaderBoard {
     level: number;
 }
 
+export interface BadgeWithStatus {
+    badgeId: string;
+    slug: string;
+    badgeName: string;
+    badgeDescription: string;
+    earnedAt: string | null;
+    earned: boolean;
+    progress: number;
+    criteriaType: string;
+    criteriaValue: number;
+}
+
 export interface DashboardProfile extends Omit<UserProfile, "lastActivities" | "quizAttempts" | "userBadges" | "coinTransaction"> {
     email: string;
     firstName: string;
@@ -54,6 +66,7 @@ export interface DashboardProfile extends Omit<UserProfile, "lastActivities" | "
 
     earnedBadges: {
         badgeId: string;
+        slug: string;
         badgeName: string | null;
         badgeImage: string | null;
         badgeDescription: string | null;
@@ -195,6 +208,7 @@ const fetchQuiz = (quizId: string) => fetchData<Quiz>(`/quiz?quizId=${quizId}`);
 const fetchUserProgress = (userId: string, tutorialId: string) => fetchData<UserProgress>(`/tutorials/progress`, { userId, tutorialId });
 const fetchDashboardData = (email: string) => fetchData<User>(`/dashboard`, { email });
 const fetchBadges = (userId: string) => fetchData<UserBadge[]>(`/badges`, { userId });
+const fetchAllBadges = () => fetchData<BadgeWithStatus[]>(`/badges`, { all: "true" });
 const fetchLeaderboard = () => fetchData<LeaderBoard[]>(`/leaderboard`);
 const fetchTheme = () => fetchData<ThemeName>(`/profile/theme`);
 const fetchUserCoins = (userId: string) => fetchData<CoinWallet>(`/coins`, { userId });
@@ -241,6 +255,7 @@ export {
     fetchUserProgress,
     fetchDashboardData,
     fetchBadges,
+    fetchAllBadges,
     fetchLeaderboard,
     fetchAdminDashboard,
     fetchTheme,

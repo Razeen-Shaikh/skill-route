@@ -1,4 +1,5 @@
 import { ActivityType, Prisma, TransactionType } from "@/generated/prisma";
+import { evaluateAndAwardBadges } from "@/lib/badgeEvaluation";
 import { getLevelFromXP, getLevelProgressFromXp } from "@/lib/helper";
 import prisma from "@/lib/prisma";
 import { isSameDay, subDays } from "date-fns";
@@ -100,39 +101,9 @@ export async function refreshUserStreak(userId: string) {
 export async function checkAndAwardBadges(
     tx: Prisma.TransactionClient,
     userId: string,
-    totalXp: number
+    _totalXp?: number
 ) {
-    const eligibleBadges = await tx.badge.findMany({
-        where: { xpReq: { lte: totalXp } },
-    });
-
-    if (eligibleBadges.length === 0) {
-        return [];
-    }
-
-    const existingBadges = await tx.userBadge.findMany({
-        where: { profileId: userId },
-        select: { badgeId: true },
-    });
-    const earnedIds = new Set(existingBadges.map((badge) => badge.badgeId));
-    const newBadges = eligibleBadges.filter((badge) => !earnedIds.has(badge.id));
-
-    for (const badge of newBadges) {
-        await tx.userBadge.create({
-            data: { profileId: userId, badgeId: badge.id },
-        });
-
-        await tx.lastActivity.create({
-            data: {
-                userId,
-                type: ActivityType.BADGE,
-                xpAwarded: 0,
-                description: `Earned badge: ${badge.name}`,
-            },
-        });
-    }
-
-    return newBadges;
+    return evaluateAndAwardBadges(userId, tx);
 }
 
 export async function awardXp(

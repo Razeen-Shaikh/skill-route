@@ -2,17 +2,15 @@
   "name": "skill-route",
   "version": "1.0.0",
   "private": true,
-  "engines": {
-    "node": ">=22.14.0",
-    "npm": ">=11.3.0"
-  },
+
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest --watch",
-    "recalculate-scores": "tsx prisma/recalculate-scores.ts"
+    "recalculate-scores": "tsx prisma/recalculate-scores.ts",
+    "seed-badges": "tsx prisma/seed-badges.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.8.0",

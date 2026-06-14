@@ -9,6 +9,17 @@ datasource db {
 }
 
 // =========================== ENUMS ===========================
+enum BadgeCriteria {
+  XP
+  LEVEL
+  QUIZZES_PASSED
+  TUTORIALS_COMPLETED
+  ROADMAP_STEPS
+  STREAK
+  COINS
+  PERFECT_QUIZ
+}
+
 enum ActivityType {
   BADGE
   COINS
@@ -281,13 +292,16 @@ model UserBadge {
 }
 
 model Badge {
-  id          String   @id @default(uuid())
-  name        String
-  imageUrl    String
-  xpReq       Int      @default(0)
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
+  id            String         @id @default(uuid())
+  slug          String         @unique
+  name          String
+  imageUrl      String         @default("")
+  description   String?
+  criteriaType  BadgeCriteria  @default(XP)
+  criteriaValue Int            @default(0)
+  xpReq         Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now()) @updatedAt
 
   badges UserBadge[]
 
