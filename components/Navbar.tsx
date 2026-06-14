@@ -18,6 +18,7 @@ import AuthNavLink from "@/components/AuthNavLink";
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { data: session } = useSession();
+  const homeHref = session ? "/roadmaps" : "/";
 
   const logOut = () => {
     signOut({ callbackUrl: "/" });
@@ -29,7 +30,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center py-4">
           {/* Logo */}
           <Link
-            href="/"
+            href={homeHref}
             className="text-xl font-bold text-gray-900 dark:text-white cursor-pointer flex items-center"
           >
             <GiBookshelf className="w-6 h-6" />
@@ -38,7 +39,7 @@ export default function Navbar() {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex space-x-6 items-center">
-            <NavLink href="/">Home</NavLink>
+            <NavLink href={homeHref}>Home</NavLink>
             {/* <NavLink href="/tutorials">Tutorials</NavLink> */}
             <NavLink href="/quizzes">Quizzes</NavLink>
             <NavLink href="/dashboard">Dashboard</NavLink>
@@ -86,7 +87,7 @@ export default function Navbar() {
               exit={{ opacity: 0, height: 0 }}
               className="md:hidden space-y-2 pb-4"
             >
-              <NavLink href="/">Home</NavLink>
+              <NavLink href={homeHref}>Home</NavLink>
               <NavLink href="/tutorials">Tutorials</NavLink>
               <NavLink href="/quizzes">Quizzes</NavLink>
               <NavLink href="/dashboard">Dashboard</NavLink>

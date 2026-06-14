@@ -6,7 +6,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Progress } from "@/components/ui/progress";
 import QuizCard from "./QuizCard";
 
-export default function QuizList({ quizzes }: { quizzes: Quiz[] }) {
+export default function QuizList({
+  quizzes,
+  tutorialId,
+}: {
+  quizzes: Quiz[];
+  tutorialId: string;
+}) {
   const quizIds = quizzes?.map((quiz) => quiz.id);
 
   const { data: completedQuizzes = [] } = useQuery({
@@ -15,31 +21,43 @@ export default function QuizList({ quizzes }: { quizzes: Quiz[] }) {
     enabled: quizIds.length > 0,
   });
 
-  const totalQuizzes = quizzes.length;
-  const completedCount = quizzes.filter((quiz) =>
-    completedQuizzes.some((completed) => completed.quizId === quiz.id)
+  const passedCount = quizzes.filter((quiz) =>
+    completedQuizzes.some(
+      (completed: { quizId: string; isPassed?: boolean }) =>
+        completed.quizId === quiz.id && completed.isPassed
+    )
   ).length;
-  const progress = (completedCount / totalQuizzes) * 100;
+  const progress = quizzes.length > 0 ? (passedCount / quizzes.length) * 100 : 0;
 
   return (
     <div className="space-y-4 text-muted-foreground">
-      {/* Progress Bar */}
-      <Progress value={progress} />
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm">
+          <span>Quiz progress</span>
+          <span>
+            {passedCount}/{quizzes.length} passed
+          </span>
+        </div>
+        <Progress value={progress} />
+      </div>
 
-      {/* Quiz List */}
       <h2 className="text-2xl font-semibold mt-6">Quizzes</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {quizzes.map((quiz) => {
-          const isCompleted = completedQuizzes.some((completed: { quizId: string; score: number }) => completed.quizId === quiz.id);
-          const { score, completedAt } = completedQuizzes.find((completed) => completed.quizId === quiz.id) || {};
+          const attempt = completedQuizzes.find(
+            (completed: { quizId: string; score: number; isPassed?: boolean; completedAt: string | null }) =>
+              completed.quizId === quiz.id
+          );
+          const isPassed = attempt?.isPassed ?? false;
 
           return (
             <QuizCard
               key={quiz.id}
               quiz={quiz}
-              isCompleted={isCompleted}
-              score={score ?? 0}
-              completedAt={completedAt ?? ""}
+              tutorialId={tutorialId}
+              isCompleted={isPassed}
+              score={attempt?.score ?? 0}
+              completedAt={attempt?.completedAt ?? ""}
             />
           );
         })}

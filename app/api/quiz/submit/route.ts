@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/auth';
 import { Prisma } from '@/generated/prisma';
 import { awardCoins, awardXp, COIN_REWARDS, ensureGamificationProfile, XP_REWARDS } from '@/lib/gamification';
+import { completeTutorialIfReady } from '@/lib/tutorialProgress';
 
 export async function POST(request: NextRequest) {
     try {
@@ -189,10 +190,13 @@ export async function POST(request: NextRequest) {
                 },
             });
 
+            const tutorialCompletion = await completeTutorialIfReady(tx, userId, quiz.tutorialId);
+
             return {
                 attemptId: userQuizAttempt.id,
                 userId,
                 quizId,
+                tutorialId: quiz.tutorialId,
                 totalScore,
                 maxScore,
                 scorePercentage: Math.round(scorePercentage),
@@ -204,6 +208,9 @@ export async function POST(request: NextRequest) {
                 rank: xpResult.rank,
                 totalXp: xpResult.totalXp,
                 isImprovement,
+                tutorialCompleted: tutorialCompletion.tutorialCompleted,
+                nextTutorialId: tutorialCompletion.nextTutorialId,
+                allQuizzesPassed: tutorialCompletion.tutorialCompleted,
             };
         });
 

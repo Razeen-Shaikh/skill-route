@@ -6,13 +6,14 @@ import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import InterviewSection from "@/components/tutorials/InterviewSection";
-import { fetchTutorial, fetchUserProgress, updateProgress } from "@/lib/api";
+import { fetchTutorial, updateProgress } from "@/lib/api";
 import LockedTutorial from "@/components/tutorials/LockedTutorial";
 import TutorialHeader from "@/components/tutorials/TutorialHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { AUTH_LOGIN_PATH, AUTH_REGISTER_PATH } from "@/lib/authNav";
 import QuizList from "@/components/quiz/QuizList";
+import { Tutorial } from "@/lib/interfaces";
 
 export default function TutorialPage() {
   const tutorialId = useParams().id as string;
@@ -23,108 +24,107 @@ export default function TutorialPage() {
   const isAuthenticated = status === "authenticated" && userId;
 
   const { data: tutorial, isLoading: isLoadingTutorial } = useQuery({
-    queryKey: ["tutorial", tutorialId],
+    queryKey: ["tutorial", tutorialId, userId],
     queryFn: () => fetchTutorial(tutorialId),
     enabled: !!tutorialId,
     refetchOnWindowFocus: false,
   });
 
-  const { data: progress, isLoading: isLoadingProgress } = useQuery({
-    queryKey: ["progress", userId, tutorialId],
-    queryFn: () => fetchUserProgress(userId!, tutorialId),
-    enabled: !!tutorialId && !!userId,
-    refetchOnWindowFocus: false,
-  });
+  const enrichedTutorial = tutorial as Tutorial & {
+    allQuizzesPassed?: boolean;
+    isCompleted?: boolean;
+  };
 
   const updateProgressMutation = useMutation({
-    mutationFn: (progressData: { userId: string; tutorialId: string; percentageCompleted: number; }) =>
-      updateProgress(progressData.userId, progressData.tutorialId, progressData.percentageCompleted),
+    mutationFn: () => updateProgress(userId!, enrichedTutorial!.id, 100),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["progress", userId, tutorialId],
-      });
+      queryClient.invalidateQueries({ queryKey: ["tutorial", tutorialId, userId] });
+      queryClient.invalidateQueries({ queryKey: ["tutorials", userId] });
     },
   });
 
   useEffect(() => {
-    if (tutorial?.id && tutorialId !== tutorial.id) {
-      router.replace(`/tutorials/${tutorial.id}`);
+    if (enrichedTutorial?.id && tutorialId !== enrichedTutorial.id) {
+      router.replace(`/tutorials/${enrichedTutorial.id}`);
     }
-  }, [tutorial, tutorialId, router]);
+  }, [enrichedTutorial, tutorialId, router]);
 
-  const hasCompletedQuizzes = tutorial?.quizzes.every((quiz) => quiz.attempts.length > 0);
+  const hasPassedAllQuizzes =
+    enrichedTutorial?.allQuizzesPassed ??
+    (enrichedTutorial?.quizzes?.length
+      ? enrichedTutorial.quizzes.every((quiz) =>
+          quiz.attempts?.some((attempt) => attempt.isPassed)
+        )
+      : false);
 
-  const handleNext = () => {
-    if (tutorial?.nextTutorialId) {
-      router.push(`/tutorials/${tutorial?.nextTutorialId}`);
+  const handleNext = async () => {
+    if (!hasPassedAllQuizzes || !enrichedTutorial?.id) return;
+
+    if (!enrichedTutorial.isCompleted && userId) {
+      await updateProgressMutation.mutateAsync();
     }
+
+    if (enrichedTutorial.nextTutorialId) {
+      router.push(`/tutorials/${enrichedTutorial.nextTutorialId}`);
+      return;
+    }
+
+    router.push("/roadmaps");
   };
 
-  const handleFinishTutorial = () => {
-    const overallPercentageCompleted = tutorial && (tutorial?.quizzes?.filter((quiz) => quiz?.attempts?.length > 0).length / tutorial?.quizzes.length) * 100;
+  const isLastTutorial = !enrichedTutorial?.nextTutorialId;
+  const nextButtonLabel = isLastTutorial ? "Finish & Return to Roadmap" : "Next Tutorial";
 
-    if (userId && tutorial?.id) {
-      updateProgressMutation.mutate({ tutorialId: tutorial.id, userId, percentageCompleted: overallPercentageCompleted ?? 0, });
-    }
-
-  };
-
-  const isLastTutorial = !tutorial?.nextTutorialId;
-  const nextButtonLabel = isLastTutorial
-    ? progress?.interviewCompleted
-      ? progress?.challengeCompleted || !tutorial?.hasChallenge
-        ? "Finish Tutorial"
-        : "Go to Code Challenge"
-      : "Go to Interview Questions"
-    : "Next Tutorial";
-
-  if (isLoadingTutorial || isLoadingProgress) {
+  if (isLoadingTutorial) {
     return (
       <div className="p-8 space-y-8">
-        {/* Skeleton for Header */}
         <Skeleton className="h-10 w-3/4" />
         <Skeleton className="h-6 w-1/2" />
-
-        {/* Skeleton for Content */}
         <div className="space-y-4">
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-5/6" />
           <Skeleton className="h-4 w-4/6" />
         </div>
-
-        {/* Skeleton for Quiz List */}
-        <div className="mt-6">
-          <Skeleton className="h-8 w-40" />
-          <Skeleton className="h-6 w-3/4 mt-2" />
-          <Skeleton className="h-6 w-1/2 mt-2" />
-        </div>
+        <Skeleton className="h-8 w-40" />
       </div>
     );
   }
 
+  if (!enrichedTutorial) {
+    return <p className="p-8">Tutorial not found.</p>;
+  }
+
   return (
     <div className="p-8 space-y-8">
-      {tutorial?.isLocked ? (
+      {enrichedTutorial.isLocked ? (
         <LockedTutorial />
       ) : (
         <>
-          <TutorialHeader
-            handleNext={handleNext}
-            handleFinishTutorial={handleFinishTutorial}
-            hasCompletedQuizzes={hasCompletedQuizzes!}
-            isLastTutorial={isLastTutorial}
-            nextButtonLabel={nextButtonLabel}
-            updateProgressMutation={updateProgressMutation}
-            progress={progress!}
-            tutorial={tutorial!}
-          />
+          <div>
+            <h1 className="text-3xl font-bold">{enrichedTutorial.title}</h1>
+            <p className="text-muted-foreground mt-2">{enrichedTutorial.description}</p>
+          </div>
 
-          <MarkdownRenderer content={tutorial?.content ?? ""} />
+          {isAuthenticated && (
+            <TutorialHeader
+              handleNext={handleNext}
+              hasCompletedQuizzes={hasPassedAllQuizzes}
+              isLastTutorial={isLastTutorial}
+              nextButtonLabel={nextButtonLabel}
+              updateProgressMutation={updateProgressMutation}
+              tutorial={enrichedTutorial}
+            />
+          )}
+
+          <MarkdownRenderer content={enrichedTutorial.content ?? ""} />
 
           <InterviewSection />
 
           {isAuthenticated ? (
-            <QuizList quizzes={tutorial?.quizzes ?? []} />
+            <QuizList
+              quizzes={enrichedTutorial.quizzes ?? []}
+              tutorialId={enrichedTutorial.id}
+            />
           ) : (
             <div>
               Your learning adventure starts here —{" "}

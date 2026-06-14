@@ -22,12 +22,20 @@ export async function GET(req: NextRequest) {
 
     const completedQuizzes = await prisma.userQuizAttempt.findMany({
         where: { quizId: { in: quizIds }, profileId: userId },
-        select: { quizId: true, score: true, completedAt: true },
+        select: { quizId: true, score: true, completedAt: true, isPassed: true },
     });
 
     if (!completedQuizzes) {
         return NextResponse.json({ error: "No completed quizzes found" }, { status: 404 });
     }
 
-    return NextResponse.json(completedQuizzes.map((attempt) => ({ quizId: attempt.quizId, score: attempt.score, completedAt: attempt.completedAt ? new Date(attempt.completedAt) : null })), { status: 200 });
+    return NextResponse.json(
+        completedQuizzes.map((attempt) => ({
+            quizId: attempt.quizId,
+            score: attempt.score,
+            isPassed: attempt.isPassed,
+            completedAt: attempt.completedAt ? new Date(attempt.completedAt) : null,
+        })),
+        { status: 200 }
+    );
 }

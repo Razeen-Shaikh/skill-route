@@ -180,6 +180,10 @@ export interface QuizSubmitResult {
     level: number;
     rank: string;
     totalXp: number;
+    tutorialId: string;
+    tutorialCompleted: boolean;
+    nextTutorialId: string | null;
+    allQuizzesPassed: boolean;
 }
 
 /** Fetch functions **/
@@ -207,7 +211,11 @@ const fetchTransactions = async ({ page, limit, filter }: { page: number; limit:
     return fetchData<{ transactions: CoinTransaction[]; totalPages: number }>(`/transactions`, { page, limit, filter: filter !== "ALL" ? filter : undefined });
 };
 
-const fetchQuizAttempts = (quizIds: string[]) => fetchData<{ quizId: string, score: number, completedAt: string }[]>(`/quiz/attempts`, { quizIds: quizIds.join(",") });
+const fetchQuizAttempts = (quizIds: string[]) =>
+    fetchData<{ quizId: string; score: number; isPassed: boolean; completedAt: string | null }[]>(
+        `/quiz/attempts`,
+        { quizIds: quizIds.join(",") }
+    );
 
 /** Update functions **/
 const updateProfile = (userId: string, avatar: string, theme: string) => putData(`/profile`, { userId, avatarUrl: avatar, theme });

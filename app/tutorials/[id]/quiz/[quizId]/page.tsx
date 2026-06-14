@@ -1,15 +1,12 @@
-// import QuizPage from "@/components/quiz/QuizPage";
+"use client";
 
-// export default function Page({ params }: { params: { quizId: string } }) {
-//   return <QuizPage quizId={params.quizId} />;
-// }
+import { useParams } from "next/navigation";
+import QuizPage from "@/components/quiz/QuizPage";
 
-import React from 'react'
+export default function Page() {
+  const params = useParams();
+  const tutorialId = params.id as string;
+  const quizId = params.quizId as string;
 
-const QuizPage = () => {
-  return (
-    <div>QuizPage</div>
-  )
+  return <QuizPage quizId={quizId} tutorialId={tutorialId} />;
 }
-
-export default QuizPage

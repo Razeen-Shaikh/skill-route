@@ -4,25 +4,22 @@ import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { useRouter } from "next/navigation";
 import { Tutorial } from "@/lib/interfaces";
 
-/**
- * A card component representing a tutorial.
- *
- * @prop {Tutorial} tutorial The tutorial data.
- * @prop {boolean} isCompleted Whether the tutorial is completed or not.
- *
- * @example
- * <TutorialCard tutorial={tutorial} isCompleted={progress.interviewCompleted} />
- */
 const TutorialCard = ({
   tutorial: { id, title, description, isLocked },
   isCompleted,
+  isActive = false,
 }: {
   tutorial: Tutorial;
   isCompleted: boolean;
+  isActive?: boolean;
 }) => {
   const router = useRouter();
 
-  const handleClick = () => !isLocked && router.push(`/tutorials/${id}`);
+  const handleClick = () => {
+    if (!isLocked) {
+      router.push(`/tutorials/${id}`);
+    }
+  };
 
   return (
     <Card
@@ -30,17 +27,17 @@ const TutorialCard = ({
       className={cn(
         "cursor-pointer transition-all",
         isLocked
-          ? "bg-muted text-muted-foreground cursor-not-allowed"
-          : "hover:shadow-lg"
+          ? "bg-muted text-muted-foreground cursor-not-allowed opacity-70"
+          : "hover:shadow-lg",
+        isActive && !isLocked && "ring-2 ring-blue-500 shadow-md"
       )}
     >
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-muted-foreground">{description}</p>
-        <p className="text-sm">
-          {/* TODO: Can be unlocked with coins if the tutorial before it is already opened */}
+        <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
+        <p className="text-sm mt-2 flex items-center gap-2">
           {isLocked ? "🔒 Locked" : "🔓 Unlocked"}
           {isCompleted && <span className="text-green-500">✔ Completed</span>}
         </p>
