@@ -158,6 +158,30 @@ const putData = async <T>(url: string, body: object) => {
     }
 };
 
+const patchData = async <T>(url: string, body: object) => {
+    try {
+        const { data } = await api.patch<T>(url, body);
+        return data;
+    } catch (error) {
+        console.error(`Error updating data at ${url}:`, error);
+        throw new Error("Failed to update data");
+    }
+};
+
+export interface QuizSubmitResult {
+    attemptId: string;
+    totalScore: number;
+    maxScore: number;
+    scorePercentage: number;
+    isPassed: boolean;
+    xpEarned: number;
+    coinsAwarded: number;
+    leveledUp: boolean;
+    level: number;
+    rank: string;
+    totalXp: number;
+}
+
 /** Fetch functions **/
 const fetchUserData = () => fetchData<User>("/user");
 const fetchTutorials = () => fetchData<Tutorial[]>("/tutorials");
@@ -187,14 +211,16 @@ const fetchQuizAttempts = (quizIds: string[]) => fetchData<{ quizId: string, sco
 
 /** Update functions **/
 const updateProfile = (userId: string, avatar: string, theme: string) => putData(`/profile`, { userId, avatarUrl: avatar, theme });
-const updateRewards = () => postData<{ reward: number; message: string }>(`/rewards`, {});
+const updateRewards = () => postData<{ reward: number; message: string; alreadyClaimed?: boolean }>(`/rewards`, {});
 const updateStreak = (userId: string) => postData(`/streak`, { userId });
 const updateTheme = (newTheme: string) => putData<ThemeName>(`/profile/theme`, { theme: newTheme });
-const updateProgress = (userId: string, tutorialId: string, percentageCompleted: number) => putData(`/tutorials/progress`, { userId, tutorialId, percentageCompleted });
+const updateProgress = (userId: string, tutorialId: string, percentageCompleted: number) =>
+    patchData(`/tutorials/progress`, { userId, tutorialId, percentageCompleted });
 const markComplete = (stepId: string) => postData(`/roadmaps/complete`, { id: stepId });
 
 /** Create functions **/
-const submitQuizAttempt = (quizId: string, attempts: { questionId: string; selectedOption: string }[]) => postData<UserQuizAttempt>(`/quiz/submit`, { quizId, attempts });
+const submitQuizAttempt = (quizId: string, attempts: { questionId: string; selectedOption: string }[]) =>
+    postData<{ success: boolean; message: string; data: QuizSubmitResult }>(`/quiz/submit`, { quizId, attempts });
 const registerUser = async (name: string, email: string, password: string) => postData(`/auth/register`, { name, email, password });
 
 

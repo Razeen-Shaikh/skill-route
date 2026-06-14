@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-// Define the FormattedUser type
 type FormattedUser = {
     id: string;
     firstName: string;
@@ -16,6 +15,7 @@ type FormattedUser = {
 export async function GET() {
     try {
         const topUsers = await prisma.user.findMany({
+            take: 100,
             orderBy: {
                 profile: {
                     xp: "desc",
@@ -34,27 +34,19 @@ export async function GET() {
             },
         });
 
-        if (!topUsers) {
-            return NextResponse.json({ error: "No users found" }, { status: 404 });
-        }
-
-        const formattedTopUsers: FormattedUser[] = topUsers.map((user) => ({
-            id: 'id' in user ? user.id : '',
-            firstName: 'firstName' in user ? user.firstName : '',
-            lastName: 'lastName' in user ? user.lastName : null,
-            avatar: user.profile?.avatar ?? null,
-            rank: user.profile?.rank ?? null,
-            xp: user.profile?.xp ?? null,
-            coins: user.profile?.coinWallet?.balance ?? null,
-            level: user.profile?.level ?? null,
-        }));
-
-        // Sort users by rank
-        formattedTopUsers.sort((a, b) => {
-            const rankA = a.rank ?? '';
-            const rankB = b.rank ?? '';
-            return rankA.localeCompare(rankB);
-        });
+        const formattedTopUsers: FormattedUser[] = topUsers
+            .filter((user) => user.profile)
+            .map((user) => ({
+                id: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                avatar: user.profile?.avatar ?? null,
+                rank: user.profile?.rank ?? null,
+                xp: user.profile?.xp ?? 0,
+                coins: user.profile?.coinWallet?.balance ?? 0,
+                level: user.profile?.level ?? 1,
+            }))
+            .sort((a, b) => (b.xp ?? 0) - (a.xp ?? 0));
 
         return NextResponse.json(formattedTopUsers);
     } catch (error) {

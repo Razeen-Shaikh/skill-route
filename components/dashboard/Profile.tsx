@@ -3,7 +3,7 @@
 import { Avatar, AvatarImage, AvatarFallback } from '@radix-ui/react-avatar';
 import { Medal, Star, Coins, Mountain, TrendingUp, Mail, Settings } from 'lucide-react';
 import React from 'react'
-import { getRankColor } from '@/lib/helper';
+import { getLevelProgressFromXp, getRankColor } from '@/lib/helper';
 import {
     Tooltip,
     TooltipContent,
@@ -39,9 +39,12 @@ const Profile: React.FC<ProfilePropsType> = ({
     streakCount,
     longestStreak,
 }) => {
-    const safeRank = rank ?? 'N/A';
-    const xpForNextLevel = (level + 1) * 1000;
-    const xpPercentageToNextLevel = Math.min((xp / xpForNextLevel) * 100, 100).toFixed(2);
+    const safeRank = rank ?? 'Beginner';
+    const { levelProgress, levelProgressMax } = getLevelProgressFromXp(xp);
+    const xpPercentageToNextLevel = levelProgressMax > 0
+        ? Math.min((levelProgress / levelProgressMax) * 100, 100).toFixed(0)
+        : "0";
+    const xpRemaining = Math.max(levelProgressMax - levelProgress, 0);
 
     return (
         <div className="flex items-start gap-6 w-full">
@@ -84,7 +87,7 @@ const Profile: React.FC<ProfilePropsType> = ({
                         </TooltipTrigger>
                         <TooltipContent className="bg-black text-white px-3 py-1 text-xs rounded">
                             {`You've completed ${xpPercentageToNextLevel}% of Level ${level}.`}<br />
-                            {`${xpForNextLevel - xp} XP to Level ${level + 1}.`}
+                            {`${xpRemaining} XP to Level ${level + 1}.`}
                         </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>

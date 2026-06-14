@@ -2,6 +2,7 @@ import { UserQuizAttempt, UserStreak, CoinTransaction, LastActivity, UserBadge, 
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAuthUser } from '@/lib/auth';
+import { ensureGamificationProfile, refreshUserStreak } from '@/lib/gamification';
 
 export async function GET() {
     try {
@@ -34,7 +35,10 @@ export async function GET() {
                     },
                 },
                 streaks: true,
-                lastActivities: true,
+                lastActivities: {
+                    orderBy: { createdAt: "desc" },
+                    take: 10,
+                },
             },
         });
 
@@ -42,7 +46,43 @@ export async function GET() {
             return NextResponse.json({ error: "User profile not found" }, { status: 404 });
         }
 
-        const formattedUserProfile = flattenUserProfile(userProfile);
+        await ensureGamificationProfile(userId);
+        await refreshUserStreak(userId);
+
+        const refreshedProfile = await prisma.userProfile.findUnique({
+            where: { userId },
+            include: {
+                user: true,
+                coinTransaction: true,
+                coinWallet: true,
+                progress: {
+                    include: {
+                        tutorial: true,
+                    },
+                },
+                quizAttempts: {
+                    include: {
+                        quiz: true,
+                    },
+                },
+                userBadges: {
+                    include: {
+                        badge: true,
+                    },
+                },
+                streaks: true,
+                lastActivities: {
+                    orderBy: { createdAt: "desc" },
+                    take: 10,
+                },
+            },
+        });
+
+        if (!refreshedProfile) {
+            return NextResponse.json({ error: "User profile not found" }, { status: 404 });
+        }
+
+        const formattedUserProfile = flattenUserProfile(refreshedProfile);
 
         const totalTutorials = await prisma.tutorial.count();
         const totalQuizzes = await prisma.quiz.count();

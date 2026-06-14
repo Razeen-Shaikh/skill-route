@@ -54,12 +54,36 @@ export function getLevelFromXP(xp: number): number {
     return level;
 }
 
+export function getXpRequiredForLevel(level: number): number {
+    return level * 100;
+}
+
+export function getTotalXpForLevel(level: number): number {
+    let total = 0;
+    for (let currentLevel = 1; currentLevel < level; currentLevel++) {
+        total += getXpRequiredForLevel(currentLevel);
+    }
+    return total;
+}
+
+export function getLevelProgressFromXp(xp: number) {
+    const level = getLevelFromXP(xp);
+    const xpAtLevelStart = getTotalXpForLevel(level);
+    const levelProgress = xp - xpAtLevelStart;
+    const levelProgressMax = getXpRequiredForLevel(level);
+    const rank = calculateRank(xp);
+
+    return { level, levelProgress, levelProgressMax, rank };
+}
+
 export const rankColors = {
     Grandmaster: "text-yellow-500",
-    Master: "text-purple-500",
     Legend: "text-green-500",
+    Master: "text-purple-500",
     "Pro Learner": "text-blue-500",
     Intermediate: "text-gray-500",
+    Novice: "text-orange-500",
+    Beginner: "text-slate-500",
 };
 
 export const calculateRank = (xp: number): string => {
@@ -73,27 +97,10 @@ export const calculateRank = (xp: number): string => {
 };
 
 export const getRankColor = (rank: string): string => {
-    switch (rank) {
-        case "Grandmaster":
-            return rankColors.Grandmaster;
-        case "Master":
-            return rankColors.Master;
-        case "Legend":
-            return rankColors.Legend;
-        case "Pro Learner":
-            return rankColors["Pro Learner"];
-        case "Intermediate":
-            return rankColors.Intermediate;
-        default:
-            return "text-dark-500";
-    }
-}
+    return rankColors[rank as keyof typeof rankColors] ?? "text-slate-500";
+};
 
+/** @deprecated Use calculateRank instead */
 export function getRankFromLevelXP(level: number, xp: number): string {
-    if (level >= 10 && xp >= 15000) return "Legend";
-    if (level >= 8 && xp >= 12000) return "Master";
-    if (level >= 6 && xp >= 9000) return "Grandmaster";
-    if (level >= 4 && xp >= 6000) return "Pro Learner";
-    if (level >= 2 && xp >= 3000) return "Intermediate";
-    return "Rookie";
+    return calculateRank(xp);
 }

@@ -13,6 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import Leaderboard from "@/components/dashboard/Leaderboard";
 import UserProfile from "@/components/dashboard/Profile";
 import UserBadge from "@/components/dashboard/UserBadge";
+import DailyRewards from "@/components/dashboard/DailyRewards";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
@@ -47,8 +48,10 @@ export default function Dashboard() {
     lastActivities
   } = profile || {};
 
-  const tutorialsCompletedPercentage = ((Number(completedTutorials) ?? 0) / (Number(totalTutorials) ?? 1)) * 100;
-  const quzzesCompletedPercentage = ((Number(completedQuizzes) ?? 0) / (Number(totalQuizzes) ?? 1)) * 100;
+  const tutorialsCompletedPercentage =
+    ((completedTutorials?.length ?? 0) / (totalTutorials || 1)) * 100;
+  const quzzesCompletedPercentage =
+    ((completedQuizzes?.length ?? 0) / (totalQuizzes || 1)) * 100;
 
   if (isProfileLoading) {
     return (
@@ -140,6 +143,7 @@ export default function Dashboard() {
       <Card className="p-4">
         <UserBadge badges={earnedBadges ?? []} />
       </Card>
+      <DailyRewards />
       <Tabs defaultValue="progress">
         <TabsList className="flex space-x-4">
           <TabsTrigger value="progress" className="cursor-pointer">

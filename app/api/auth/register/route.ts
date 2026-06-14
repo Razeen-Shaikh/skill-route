@@ -24,7 +24,12 @@ export async function POST(req: Request) {
                 firstName: username,
                 passwordHash: hashedPassword,
                 verificationToken,
-                profile: { create: {} },
+                profile: {
+                    create: {
+                        coinWallet: { create: {} },
+                        streaks: { create: {} },
+                    },
+                },
             },
         });
 

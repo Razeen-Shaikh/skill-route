@@ -92,7 +92,14 @@ export const authOptions = {
                             firstName: user.name?.split(" ")[0] || "User",
                             role: "USER",
                             emailVerified: true,
-                            profile: { create: { theme: "LIGHT", avatar: user.image } },
+                            profile: {
+                                create: {
+                                    theme: "LIGHT",
+                                    avatar: user.image,
+                                    coinWallet: { create: {} },
+                                    streaks: { create: {} },
+                                },
+                            },
                         },
                     });
                 }

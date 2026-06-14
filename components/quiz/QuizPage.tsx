@@ -13,6 +13,15 @@ export default function QuizPage({ quizId }: { quizId: string }) {
     >({});
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
+    const [result, setResult] = useState<{
+        scorePercentage: number;
+        isPassed: boolean;
+        xpEarned: number;
+        coinsAwarded: number;
+        leveledUp: boolean;
+        level: number;
+        message: string;
+    } | null>(null);
 
     const { status } = useSession();
     const router = useRouter();
@@ -42,7 +51,7 @@ export default function QuizPage({ quizId }: { quizId: string }) {
         [currentQuestion]
     );
 
-    const { mutate } = useMutation({
+    const { mutate, isPending } = useMutation({
         mutationFn: async () => {
             if (!quizId) throw new Error("Quiz ID is not available");
             return submitQuizAttempt(
@@ -53,8 +62,16 @@ export default function QuizPage({ quizId }: { quizId: string }) {
                 })) ?? []
             );
         },
-        onSuccess: () => {
-            router.back();
+        onSuccess: (response) => {
+            setResult({
+                scorePercentage: response.data.scorePercentage,
+                isPassed: response.data.isPassed,
+                xpEarned: response.data.xpEarned,
+                coinsAwarded: response.data.coinsAwarded,
+                leveledUp: response.data.leveledUp,
+                level: response.data.level,
+                message: response.message,
+            });
         },
         onError: (error) => {
             console.error("Submission error:", error);
@@ -96,6 +113,31 @@ export default function QuizPage({ quizId }: { quizId: string }) {
     if (isLoading) return <QuizSkeleton />;
     if (!quiz) return <p>Quiz not found.</p>;
 
+    if (result) {
+        return (
+            <div className="p-6 max-w-xl mx-auto space-y-4">
+                <h1 className="text-3xl font-bold">{result.isPassed ? "Quiz Passed!" : "Quiz Complete"}</h1>
+                <p className="text-muted-foreground">{result.message}</p>
+                <div className="rounded-lg border p-4 space-y-2">
+                    <p>Score: <strong>{result.scorePercentage}%</strong></p>
+                    <p>XP earned: <strong>+{result.xpEarned}</strong></p>
+                    {result.coinsAwarded > 0 && (
+                        <p>Coins earned: <strong>+{result.coinsAwarded}</strong></p>
+                    )}
+                    {result.leveledUp && (
+                        <p className="text-purple-600 font-semibold">Level up! You reached level {result.level}.</p>
+                    )}
+                </div>
+                <button
+                    className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg text-white cursor-pointer"
+                    onClick={() => router.back()}
+                >
+                    Back to Tutorial
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="p-6 space-y-4">
             <h1 className="text-3xl font-bold mb-6">{quiz.title}</h1>
@@ -133,10 +175,11 @@ export default function QuizPage({ quizId }: { quizId: string }) {
                     </button>
                 ) : (
                     <button
-                        className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg text-white cursor-pointer"
+                        className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg text-white cursor-pointer disabled:opacity-50"
                         onClick={handleSubmit}
+                        disabled={isPending}
                     >
-                        Finish Quiz
+                        {isPending ? "Submitting..." : "Finish Quiz"}
                     </button>
                 )}
             </div>
