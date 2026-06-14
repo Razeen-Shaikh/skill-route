@@ -42,7 +42,7 @@ next-env.d.ts
 
 # prisma
 .prisma
-/prisma/migrations
+*/prisma/migrations
 /generated
 /generated/*
 

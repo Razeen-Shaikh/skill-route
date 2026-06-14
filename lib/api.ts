@@ -191,7 +191,7 @@ const updateRewards = () => postData<{ reward: number; message: string }>(`/rewa
 const updateStreak = (userId: string) => postData(`/streak`, { userId });
 const updateTheme = (newTheme: string) => putData<ThemeName>(`/profile/theme`, { theme: newTheme });
 const updateProgress = (userId: string, tutorialId: string, percentageCompleted: number) => putData(`/tutorials/progress`, { userId, tutorialId, percentageCompleted });
-const markComplete = (roadmapId: string) => postData(`/roadmap/complete`, { id: roadmapId });
+const markComplete = (stepId: string) => postData(`/roadmaps/complete`, { id: stepId });
 
 /** Create functions **/
 const submitQuizAttempt = (quizId: string, attempts: { questionId: string; selectedOption: string }[]) => postData<UserQuizAttempt>(`/quiz/submit`, { quizId, attempts });

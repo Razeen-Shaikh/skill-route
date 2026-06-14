@@ -1,27 +1,46 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { steps } from '@/data/roadmap';
+import { getAuthUser } from "@/lib/auth";
+import prisma from "@/lib/prisma";
+import { StepStatus } from "@/generated/prisma";
+import { NextRequest, NextResponse } from "next/server";
 
-// POST: Mark a roadmap step as complete
 export async function POST(req: NextRequest) {
+    const user = await getAuthUser();
+    if (!user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await req.json();
 
-    if (!id) {
-        return NextResponse.json({ message: 'Step ID is required' }, { status: 400 });
+    if (!id || typeof id !== "string") {
+        return NextResponse.json({ message: "Step ID is required" }, { status: 400 });
     }
 
-    if (typeof id !== 'number') {
-        return NextResponse.json({ message: 'Step ID must be a number' }, { status: 400 });
+    const step = await prisma.roadmapStep.findUnique({ where: { id } });
+    if (!step) {
+        return NextResponse.json({ message: "Step not found" }, { status: 404 });
     }
 
-    // Find the step in the array
-    const stepIndex = steps.findIndex((step) => step.id === id);
-    if (stepIndex === -1) {
-        return NextResponse.json({ message: 'Step not found' }, { status: 404 });
+    const updatedStep = await prisma.roadmapStep.update({
+        where: { id },
+        data: {
+            completed: true,
+            progress: 100,
+            status: StepStatus.COMPLETED,
+            completedAt: new Date(),
+        },
+    });
+
+    const profile = await prisma.userProfile.findUnique({
+        where: { userId: user.id },
+        select: { completedSteps: true },
+    });
+
+    if (profile && !profile.completedSteps.includes(id)) {
+        await prisma.userProfile.update({
+            where: { userId: user.id },
+            data: { completedSteps: { push: id } },
+        });
     }
 
-    // Mark step as completed and update progress
-    steps[stepIndex].completed = true;
-    steps[stepIndex].progress = 100;
-
-    return NextResponse.json({ message: 'Step marked as complete', step: steps[stepIndex] });
+    return NextResponse.json({ message: "Step marked as complete", step: updatedStep });
 }
