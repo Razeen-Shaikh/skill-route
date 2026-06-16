@@ -6,6 +6,30 @@ export type AuthNavLink = {
     label: "Login" | "Register";
 };
 
+export type NavItem = {
+    href: string;
+    label: string;
+};
+
+export function getHomeHref(isAuthenticated: boolean): string {
+    return isAuthenticated ? "/roadmaps" : "/";
+}
+
+export function getNavItems(isAuthenticated: boolean): NavItem[] {
+    if (isAuthenticated) {
+        return [
+            { href: "/roadmaps", label: "Home" },
+            { href: "/quizzes", label: "Quizzes" },
+            { href: "/badges", label: "Badges" },
+            { href: "/dashboard", label: "Dashboard" },
+        ];
+    }
+
+    return [
+        { href: "/", label: "Home" },
+    ];
+}
+
 export function getAuthNavLink(pathname: string): AuthNavLink {
     if (pathname === AUTH_LOGIN_PATH) {
         return { href: AUTH_REGISTER_PATH, label: "Register" };

@@ -4,6 +4,7 @@ import { Quiz } from "@/lib/interfaces";
 import { fetchQuizAttempts } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import QuizCard from "./QuizCard";
 
 export default function QuizList({
@@ -15,11 +16,26 @@ export default function QuizList({
 }) {
   const quizIds = quizzes?.map((quiz) => quiz.id);
 
-  const { data: completedQuizzes = [] } = useQuery({
+  const { data: completedQuizzes = [], isLoading } = useQuery({
     queryKey: ["completedQuizzes", quizIds],
     queryFn: () => fetchQuizAttempts(quizIds),
     enabled: quizIds.length > 0,
   });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-4 w-full max-w-md" />
+        <Skeleton className="h-2 w-full" />
+        <Skeleton className="h-7 w-24" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {quizzes.map((quiz) => (
+            <Skeleton key={quiz.id} className="h-28 w-full rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const passedCount = quizzes.filter((quiz) =>
     completedQuizzes.some(

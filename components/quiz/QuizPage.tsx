@@ -131,8 +131,15 @@ export default function QuizPage({
     }
   }, [handleSubmit, timeLeft]);
 
-  if (isLoading) return <QuizSkeleton />;
-  if (!quiz) return <p>Quiz not found.</p>;
+  if (status === "loading" || isLoading) return <QuizSkeleton />;
+  if (!isAuthenticated) {
+    return (
+      <div className="p-6 max-w-xl mx-auto text-center space-y-4">
+        <p className="text-muted-foreground">Please log in to take this quiz.</p>
+      </div>
+    );
+  }
+  if (!quiz) return <p className="p-6">Quiz not found.</p>;
 
   if (result) {
     return (

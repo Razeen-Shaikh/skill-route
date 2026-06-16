@@ -6,8 +6,8 @@ import Link from "next/link";
 import { fetchAllBadges } from "@/lib/api";
 import BadgeGrid from "@/components/badges/BadgeGrid";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { BadgesSkeleton } from "@/components/skeletons";
 
 export default function BadgesPage() {
     const { status } = useSession();
@@ -19,6 +19,10 @@ export default function BadgesPage() {
         enabled: isAuthenticated,
         refetchOnWindowFocus: false,
     });
+
+    if (status === "loading" || isLoading) {
+        return <BadgesSkeleton />;
+    }
 
     if (status === "unauthenticated") {
         return (
@@ -33,20 +37,6 @@ export default function BadgesPage() {
                         </Button>
                     </CardContent>
                 </Card>
-            </div>
-        );
-    }
-
-    if (isLoading) {
-        return (
-            <div className="p-6 max-w-5xl mx-auto space-y-6">
-                <Skeleton className="h-8 w-48" />
-                <Skeleton className="h-4 w-72" />
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                    {Array.from({ length: 12 }).map((_, i) => (
-                        <Skeleton key={i} className="h-20 w-20 rounded-full mx-auto" />
-                    ))}
-                </div>
             </div>
         );
     }

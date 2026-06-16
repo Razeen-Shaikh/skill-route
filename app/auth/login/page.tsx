@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import {
   FaEnvelope,
   FaLock,
@@ -12,7 +13,9 @@ import {
 import Link from "next/link";
 import { getAuthAlternateLink } from "@/lib/authNav";
 
-const Login = () => {
+const LoginForm = () => {
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const alternateAuthLink = getAuthAlternateLink("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,13 +37,13 @@ const Login = () => {
       setError(result.error);
       setIsLoading(false);
     } else {
-      window.location.href = "/dashboard";
+      window.location.href = callbackUrl;
     }
   };
 
   const handleOAuthLogin = async (provider: "google" | "github") => {
     setIsLoading(true);
-    await signIn(provider, { callbackUrl: "/dashboard" });
+    await signIn(provider, { callbackUrl });
   };
 
   return (
@@ -142,5 +145,11 @@ const Login = () => {
     </div>
   );
 };
+
+const Login = () => (
+  <Suspense fallback={null}>
+    <LoginForm />
+  </Suspense>
+);
 
 export default Login;

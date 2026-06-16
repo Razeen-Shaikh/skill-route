@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import clsx from "clsx";
 import { Button } from "@/components/ui/button";
+import { QuizzesSkeleton } from "@/components/skeletons";
 
 export default function QuizzesPage() {
   const { status } = useSession();
@@ -20,28 +21,20 @@ export default function QuizzesPage() {
         ...quiz,
         timeLimit: quiz.timeLimit ?? null,
         tutorialId: quiz.tutorialId ?? null,
+        attempts: quiz.attempts ?? [],
       }));
     },
     refetchOnWindowFocus: false,
   });
 
+  if (isLoading) {
+    return <QuizzesSkeleton />;
+  }
+
   return (
     <div className="max-w-5xl mx-auto p-6">
       <h1 className="text-3xl font-bold text-gray-200 mb-6">🧠 Quizzes</h1>
 
-      {/* Loading State */}
-      {isLoading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-36 bg-gray-800 rounded-lg animate-pulse"
-            ></div>
-          ))}
-        </div>
-      )}
-
-      {/* Error State */}
       {error && (
         <div className="flex flex-col items-center justify-center text-center text-gray-300 space-y-4">
           <p className="text-lg text-red-400">⚠️ Error: {error.message}</p>
@@ -54,14 +47,13 @@ export default function QuizzesPage() {
         </div>
       )}
 
-      {/* Quizzes List */}
       {data && (
         <div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
           aria-live="polite"
         >
           {data.map((quiz) => {
-            const attempts = quiz?.attempts;
+            const attempts = quiz?.attempts ?? [];
 
             let buttonText = "Start Quiz";
             let buttonColor = "bg-blue-600 hover:bg-blue-700";
@@ -110,10 +102,7 @@ export default function QuizzesPage() {
                     🔒 Locked
                   </Button>
                 ) : (
-                  <Link
-                    href={`/quizzes/${quiz.id}`}
-                    passHref
-                  >
+                  <Link href={`/quizzes/${quiz.id}`} passHref>
                     <Button
                       className={`mt-3 w-full py-2 text-white rounded-lg transition cursor-pointer ${buttonColor}`}
                     >

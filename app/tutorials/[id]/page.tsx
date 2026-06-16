@@ -9,7 +9,7 @@ import InterviewSection from "@/components/tutorials/InterviewSection";
 import { fetchTutorial, updateProgress } from "@/lib/api";
 import LockedTutorial from "@/components/tutorials/LockedTutorial";
 import TutorialHeader from "@/components/tutorials/TutorialHeader";
-import { Skeleton } from "@/components/ui/skeleton";
+import { TutorialPageSkeleton } from "@/components/skeletons";
 import Link from "next/link";
 import { AUTH_LOGIN_PATH, AUTH_REGISTER_PATH } from "@/lib/authNav";
 import QuizList from "@/components/quiz/QuizList";
@@ -76,18 +76,7 @@ export default function TutorialPage() {
   const nextButtonLabel = isLastTutorial ? "Finish & Return to Roadmap" : "Next Tutorial";
 
   if (isLoadingTutorial) {
-    return (
-      <div className="p-8 space-y-8">
-        <Skeleton className="h-10 w-3/4" />
-        <Skeleton className="h-6 w-1/2" />
-        <div className="space-y-4">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-5/6" />
-          <Skeleton className="h-4 w-4/6" />
-        </div>
-        <Skeleton className="h-8 w-40" />
-      </div>
-    );
+    return <TutorialPageSkeleton />;
   }
 
   if (!enrichedTutorial) {

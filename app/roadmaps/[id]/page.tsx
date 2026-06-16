@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import RoadmapStepUnit, { RoadmapStepWithTutorials } from "@/components/roadmaps/RoadmapStepUnit";
+import { RoadmapTreeSkeleton } from "@/components/skeletons";
 
 const RoadmapTree = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -14,7 +15,7 @@ const RoadmapTree = () => {
 
   const { id: roadmapId } = useParams();
 
-  const { steps: roadmapSteps } = useRoadmap(roadmapId as string);
+  const { steps: roadmapSteps, isLoading } = useRoadmap(roadmapId as string);
 
   const levels = useMemo(() => {
     const levelMap: Record<number, RoadmapStepWithTutorials[]> = {};
@@ -103,6 +104,10 @@ const RoadmapTree = () => {
       setPositions(newPositions);
     }, 300);
   }, [levels]);
+
+  if (isLoading) {
+    return <RoadmapTreeSkeleton />;
+  }
 
   return (
     <div

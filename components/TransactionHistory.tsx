@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { useSession } from "next-auth/react";
 import { CoinTransaction, TransactionType } from "@/lib/interfaces";
+import { TransactionHistorySkeleton } from "@/components/skeletons";
 
 export default function TransactionHistory() {
   const [page, setPage] = useState(1);
@@ -31,8 +32,8 @@ export default function TransactionHistory() {
     refetchOnWindowFocus: false,
   });
 
-  if (isLoading) return <p>Loading transactions...</p>;
-  if (error) return <p>Failed to load transactions.</p>;
+  if (isLoading) return <TransactionHistorySkeleton />;
+  if (error) return <p className="text-destructive p-4">Failed to load transactions.</p>;
 
   return (
     <Card className="p-4">

@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Coins } from "lucide-react";
 import TutorialCard from "./TutorialCard";
 import { Tutorial } from "@/lib/interfaces";
+import { TutorialsSidebarSkeleton } from "@/components/skeletons";
 
 export default function Sidebar() {
   const { id: activeTutorialId } = useParams();
@@ -34,6 +35,10 @@ export default function Sidebar() {
     ? activeTutorialId[0]
     : activeTutorialId;
 
+  if (status === "loading" || loadingTutorials) {
+    return <TutorialsSidebarSkeleton />;
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -48,14 +53,7 @@ export default function Sidebar() {
         )}
       </div>
 
-      {loadingTutorials ? (
-        <div className="space-y-3">
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-20 w-full" />
-        </div>
-      ) : (
-        tutorials?.map((tutorial: Tutorial & { isCompleted?: boolean }) => {
+      {tutorials?.map((tutorial: Tutorial & { isCompleted?: boolean }) => {
           const isActive = tutorial.id === currentTutorialId;
           return (
             <TutorialCard
@@ -65,8 +63,7 @@ export default function Sidebar() {
               isActive={isActive}
             />
           );
-        })
-      )}
+        })}
     </div>
   );
 }

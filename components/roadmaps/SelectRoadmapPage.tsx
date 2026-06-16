@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { CheckCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchRoadmaps } from "@/lib/api";
+import { RoadmapsSkeleton } from "@/components/skeletons";
 
 const SelectRoadmapPage = () => {
   const router = useRouter();
@@ -22,11 +23,7 @@ const SelectRoadmapPage = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center">
-        <p>Loading...</p>
-      </div>
-    );
+    return <RoadmapsSkeleton />;
   }
 
   if (!roadmaps || roadmaps.length === 0) {

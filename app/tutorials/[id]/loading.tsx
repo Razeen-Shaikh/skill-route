@@ -1,0 +1,5 @@
+import { TutorialPageSkeleton } from "@/components/skeletons";
+
+export default function Loading() {
+  return <TutorialPageSkeleton />;
+}

@@ -7,25 +7,33 @@ import {
 } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import TransactionHistory from "@/components/TransactionHistory";
+import dynamic from "next/dynamic";
 import RecentActivities from "@/components/RecentActivities";
 import { Progress } from "@/components/ui/progress";
 import Leaderboard from "@/components/dashboard/Leaderboard";
 import UserProfile from "@/components/dashboard/Profile";
 import UserBadge from "@/components/dashboard/UserBadge";
 import DailyRewards from "@/components/dashboard/DailyRewards";
-import { Skeleton } from "@/components/ui/skeleton";
+import { DashboardSkeleton, TransactionHistorySkeleton } from "@/components/skeletons";
+
+const TransactionHistory = dynamic(
+  () => import("@/components/TransactionHistory"),
+  {
+    loading: () => <TransactionHistorySkeleton />,
+    ssr: false,
+  }
+);
 
 export default function Dashboard() {
   const { status } = useSession();
 
-  const isAuthenticated = (status === "authenticated");
+  const isAuthenticated = status === "authenticated";
 
   const { data: profile, isLoading: isProfileLoading } = useQuery({
     queryKey: ["profile"],
     queryFn: () => fetchProfile(),
-    enabled: !!isAuthenticated,
-    refetchOnWindowFocus: false,
+    enabled: isAuthenticated,
+    staleTime: 2 * 60 * 1000,
   });
 
   const {
@@ -53,74 +61,12 @@ export default function Dashboard() {
   const quzzesCompletedPercentage =
     ((completedQuizzes?.length ?? 0) / (totalQuizzes || 1)) * 100;
 
-  if (isProfileLoading) {
-    return (
-      <div className="p-6 space-y-6">
-        <Card className="p-4 flex items-center space-x-6">
-          <Skeleton className="h-16 w-16 rounded-full" />
-          <div className="flex-1 space-y-3">
-            <Skeleton className="h-4 w-1/3" />
-            <Skeleton className="h-3 w-1/4" />
-            <Skeleton className="h-3 w-1/5" />
-            <Skeleton className="h-3 w-1/5" />
-          </div>
-        </Card>
+  if (status === "loading" || isProfileLoading) {
+    return <DashboardSkeleton />;
+  }
 
-        <Card className="p-4">
-          <Skeleton className="h-4 w-32 mb-4" />
-          <div className="flex gap-3">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-12 w-12 rounded-full" />
-            ))}
-          </div>
-        </Card>
-
-        <Tabs defaultValue="progress">
-          <TabsList className="flex space-x-4">
-            <TabsTrigger value="progress">Progress</TabsTrigger>
-            <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
-            <TabsTrigger value="activity">Recent Activity</TabsTrigger>
-          </TabsList>
-          <TabsContent value="progress">
-            <Card>
-              <CardContent className="space-y-4">
-                <Skeleton className="h-4 w-1/3" />
-                <Skeleton className="h-2 w-full" />
-                <Skeleton className="h-4 w-1/3 mt-4" />
-                <Skeleton className="h-2 w-full" />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="leaderboard">
-            <Card>
-              <CardContent className="space-y-2">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-6 w-full" />
-                ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="activity">
-            <Card>
-              <CardContent className="space-y-2">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-4 w-full" />
-                ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        <Card>
-          <CardContent className="space-y-2">
-            <Skeleton className="h-4 w-1/3" />
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-4 w-full" />
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (status === "unauthenticated") {
+    return null;
   }
 
   return (

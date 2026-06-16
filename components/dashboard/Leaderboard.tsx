@@ -14,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { getRankColor } from "@/lib/helper";
+import { LeaderboardSkeleton } from "@/components/skeletons";
 
 const itemsPerPage = 10;
 
@@ -50,11 +51,7 @@ export default function Leaderboard(): JSX.Element {
   }, [currentPage, leaderboardData]);
 
   if (isLeaderboardLoading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <span className="text-gray-500">Loading...</span>
-      </div>
-    );
+    return <LeaderboardSkeleton />;
   }
 
   return (

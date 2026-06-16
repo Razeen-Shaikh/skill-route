@@ -1,15 +1,4 @@
-import { Quiz, ThemeName } from "./interfaces";
-
-export function getStoredOrSystemTheme(): ThemeName {
-    if (typeof window === "undefined") return "LIGHT";
-    return (localStorage.getItem("theme") as ThemeName) ?? getSystemPreference();
-}
-
-export function getSystemPreference(): ThemeName {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "DARK"
-        : "LIGHT";
-}
+import { Quiz } from "./interfaces";
 
 export const formatDate = (dateString: string) => {
     if (!dateString) return "";

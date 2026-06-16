@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { signOut, useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import Link from "next/link";
-import { Menu, X, LogOut, User } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Menu, X, LogOut, User, BookOpen } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,41 +11,43 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { GiBookshelf } from "react-icons/gi";
+import { Session } from "next-auth";
 import AuthNavLink from "@/components/AuthNavLink";
+import { getHomeHref, getNavItems } from "@/lib/authNav";
 
-export default function Navbar() {
+export default function Navbar({ session }: { session: Session | null }) {
   const [isOpen, setIsOpen] = useState(false);
-  const { data: session } = useSession();
-  const homeHref = session ? "/roadmaps" : "/";
+  const isAuthenticated = !!session;
+  const homeHref = getHomeHref(isAuthenticated);
+  const navItems = getNavItems(isAuthenticated);
 
   const logOut = () => {
     signOut({ callbackUrl: "/" });
   };
 
+  const closeMobileMenu = () => setIsOpen(false);
+
   return (
     <nav className="w-full">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex justify-between items-center py-4">
-          {/* Logo */}
           <Link
             href={homeHref}
             className="text-xl font-bold text-gray-900 dark:text-white cursor-pointer flex items-center"
+            onClick={closeMobileMenu}
           >
-            <GiBookshelf className="w-6 h-6" />
+            <BookOpen className="w-6 h-6" />
             <span className="ml-2">SkillRoute</span>
           </Link>
 
-          {/* Desktop Menu */}
           <div className="hidden md:flex space-x-6 items-center">
-            <NavLink href={homeHref}>Home</NavLink>
-            {/* <NavLink href="/tutorials">Tutorials</NavLink> */}
-            <NavLink href="/quizzes">Quizzes</NavLink>
-            {session && <NavLink href="/badges">Badges</NavLink>}
-            <NavLink href="/dashboard">Dashboard</NavLink>
+            {navItems.map((item) => (
+              <NavLink key={item.href} href={item.href}>
+                {item.label}
+              </NavLink>
+            ))}
 
-            {/* Auth Actions */}
-            {session ? (
+            {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -69,8 +70,11 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button className="md:hidden" onClick={() => setIsOpen(!isOpen)}>
+          <button
+            className="md:hidden"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label={isOpen ? "Close menu" : "Open menu"}
+          >
             {isOpen ? (
               <X className="w-6 h-6 text-gray-900 dark:text-white" />
             ) : (
@@ -79,33 +83,34 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* Mobile Menu with Animation */}
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="md:hidden space-y-2 pb-4"
-            >
-              <NavLink href={homeHref}>Home</NavLink>
-              <NavLink href="/tutorials">Tutorials</NavLink>
-              <NavLink href="/quizzes">Quizzes</NavLink>
-              {session && <NavLink href="/badges">Badges</NavLink>}
-              <NavLink href="/dashboard">Dashboard</NavLink>
-              {session ? (
-                <button
-                  onClick={() => logOut()}
-                  className="block w-full text-left px-3 py-2 rounded-md text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-800 cursor-pointer"
-                >
-                  Logout
-                </button>
-              ) : (
+        <div
+          className={`md:hidden overflow-hidden transition-all duration-200 ease-out ${
+            isOpen ? "max-h-96 opacity-100 pb-4" : "max-h-0 opacity-0"
+          }`}
+        >
+          <div className="space-y-2">
+            {navItems.map((item) => (
+              <NavLink key={item.href} href={item.href} onClick={closeMobileMenu}>
+                {item.label}
+              </NavLink>
+            ))}
+            {isAuthenticated ? (
+              <button
+                onClick={() => {
+                  closeMobileMenu();
+                  logOut();
+                }}
+                className="block w-full text-left px-3 py-2 rounded-md text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-800 cursor-pointer"
+              >
+                Logout
+              </button>
+            ) : (
+              <div onClick={closeMobileMenu}>
                 <AuthNavLink />
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </nav>
   );
@@ -114,12 +119,15 @@ export default function Navbar() {
 const NavLink = ({
   href,
   children,
+  onClick,
 }: {
   href: string;
   children: React.ReactNode;
+  onClick?: () => void;
 }) => (
   <Link
     href={href}
+    onClick={onClick}
     className="block px-3 py-2 rounded-md text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-800 cursor-pointer"
   >
     {children}
