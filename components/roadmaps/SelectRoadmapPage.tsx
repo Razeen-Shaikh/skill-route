@@ -56,6 +56,11 @@ const SelectRoadmapPage = () => {
                 <h3 className="text-xl font-semibold mb-2 text-gray-800 dark:text-white">
                   {roadmap.title}
                 </h3>
+                {roadmap.category && (
+                  <p className="text-xs font-medium uppercase tracking-wide text-blue-600 dark:text-blue-400 mb-2">
+                    {roadmap.category}
+                  </p>
+                )}
                 <p className="text-sm text-gray-600 dark:text-gray-300">
                   {(roadmap.description ?? "").length > 90
                     ? `${(roadmap.description ?? "").slice(0, 89)}...`

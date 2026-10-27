@@ -18,7 +18,7 @@ const useRoadmap = (roadmapId: string) => {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["roadmap"],
+    queryKey: ["roadmap", roadmapId],
     queryFn: () => fetchRoadmap(roadmapId),
     refetchOnWindowFocus: false,
   });
@@ -27,7 +27,7 @@ const useRoadmap = (roadmapId: string) => {
     mutationFn: async (roadmapId: string) => markComplete(roadmapId),
     mutationKey: ["completeStep"],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["roadmap"] });
+      queryClient.invalidateQueries({ queryKey: ["roadmap", roadmapId] });
     },
   });
 

@@ -10,6 +10,8 @@ export async function GET() {
             id: true,
             title: true,
             description: true,
+            category: true,
+            type: true,
         },
         orderBy: { title: "asc" },
     });

@@ -46,7 +46,7 @@ const getUserId = (userProfileRecords: UserProfile[]) => {
 }
 
 const getTotalQuizAttemptsByUserAndTutorial = (userId: string, tutorialId: string, quizRecords: Quiz[] = [], quizAttemptRecords: UserQuizAttempt[] = []) => {
-    const tutorialQuizzes = quizRecords.filter((q: { tutorialId: string; id: string }) => q.tutorialId === tutorialId).map(q => q.id);
+    const tutorialQuizzes = quizRecords.filter((q) => q.tutorialId === tutorialId).map((q) => q.id);
 
     return quizAttemptRecords.filter(q => q.profileId === userId && tutorialQuizzes.includes(q.quizId)).length;
 };
@@ -64,8 +64,11 @@ const getBestScoreByUserIdAndTutorialId = (userId: string, tutorialId: string, q
 
 const getIsCompleted = (percentageCompleted: number) => percentageCompleted === 100;
 
-const getQuizId = (quizRecords: Quiz[] = [], tutorialRecords: Tutorial[] = []) =>
-    quizRecords.filter((q: { tutorialId: string; id: string }) => q.tutorialId === tutorialRecords[0].id)[Math.floor(Math.random() * quizRecords.filter((q: { tutorialId: string; id: string }) => q.tutorialId === tutorialRecords[0].id).length)].id;
+const getQuizId = (quizRecords: Quiz[] = [], tutorialRecords: Tutorial[] = []) => {
+    const tutorialId = tutorialRecords[0]?.id;
+    const tutorialQuizzes = quizRecords.filter((q) => q.tutorialId === tutorialId);
+    return tutorialQuizzes[Math.floor(Math.random() * tutorialQuizzes.length)]?.id;
+};
 const getScoreBasedOnDifficulty = (difficulty: string) => {
     switch (difficulty) {
         case "EASY":

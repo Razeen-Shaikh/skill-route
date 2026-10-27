@@ -1,6 +1,4 @@
-﻿import { RoadmapType } from "@/generated/prisma";
-
-const usersData = [
+﻿const usersData = [
     { email: "alice@mail.com", username: "razeen", firstName: "Razeen", lastName: "Shaikh" },
     { email: "bob@mail.com", username: "bob", firstName: "Bob", lastName: "Smith" },
     { email: "charlie@mail.com", username: "charlie", firstName: "Charlie", lastName: "Brown" },
@@ -17,13 +15,6 @@ const usersData = [
     { email: "tim@mail.com", username: "tim", firstName: "Tim", lastName: "Smith" },
 ];
 
-
-const roadmapData = [
-    { title: 'MERN Stack', description: 'A comprehensive roadmap for web development.', createdAt: new Date(), updatedAt: new Date(), type: RoadmapType.FRONTEND, category: 'Web Development' },
-    { title: 'Data Science Roadmap', description: 'A roadmap for aspiring data scientists.', createdAt: new Date(), updatedAt: new Date() },
-    { title: 'Machine Learning Roadmap', description: 'A roadmap for machine learning enthusiasts.', createdAt: new Date(), updatedAt: new Date() },
-    { title: 'Mobile Development Roadmap', description: 'A roadmap for mobile app developers.', createdAt: new Date(), updatedAt: new Date() },
-];
 
 const tutorialsData = [
     { title: "Basics of HTML", description: "Learn the fundamental structure of an HTML document.", content: '# Basics of HTML\n## Introduction\nHTML (HyperText Markup Language) is the standard language for creating web pages. It structures content using elements enclosed in tags.\n## Setting Up an HTML Document\nEvery HTML document follows a basic structure:\n```html\n<!DOCTYPE html>\n<html>\n  <head>\n    <title>My First Webpage</title>\n  </head>\n  <body>\n    <h1>Welcome to HTML</h1>\n    <p>This is a simple webpage.</p>\n  </body>\n</html>\n```\n### Explanation:\n* `<!DOCTYPE html>` declares the document type.\n* `<html>` is the root element.\n* `<head>` contains meta-information and the title.\n* `<body>` contains the visible page content.\n## Common HTML Elements\n### Headings\nHeadings range from `<h1>` (largest) to `<h6>` (smallest):\n```html\n<h1>Main Heading</h1>\n<h2>Subheading</h2>\n<h3>Smaller Heading</h3>\n```\n### Paragraphs\nText is wrapped in `<p>` tags:\n```html\n<p>This is a paragraph.</p>\n```\n### Links\nCreate hyperlinks using `<a>`:\n```html\n<a href="https://www.example.com">Visit Example</a>\n```\n### Images\nDisplay images with `<img>`:\n```html\n<img src="image.jpg" alt="Description of image">\n```\n### Lists\n#### Ordered List:\n```html\n<ol>\n  <li>First item</li>\n  <li>Second item</li>\n</ol>\n```\n#### Unordered List:\n```html\n<ul>\n  <li>Item one</li>\n  <li>Item two</li>\n</ul>\n```\n## Forms\nForms collect user input:\n```html\n<form>\n  <label for="name">Name:</label>\n  <input type="text" id="name" name="name">\n  <input type="submit" value="Submit">\n</form>\n```\n## Tables\nTables organize data:\n```html\n<table>\n  <tr>\n    <th>Name</th>\n    <th>Age</th>\n  </tr>\n  <tr>\n    <td>Alice</td>\n    <td>25</td>\n  </tr>\n</table>\n```\n## Conclusion\nThis guide covers the fundamentals of HTML. Practice by creating your own webpages and experimenting with different elements.', cost: 0, isLocked: false, category: "HTML" },
@@ -236,4 +227,4 @@ Text formatting in HTML enhances the presentation of textual content. By underst
 ];
 
 
-export { usersData, roadmapData, tutorialsData };
+export { usersData, tutorialsData };

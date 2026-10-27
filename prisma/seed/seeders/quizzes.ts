@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { QuestionType, Quiz } from "@/generated/prisma";
+import { Prisma, QuestionType, Quiz } from "@/generated/prisma";
 import { allQuizDefinitions } from "../data/quizDefinitions";
 import { questionBanks } from "../data/questionBanks";
 import { buildTimingFields, pickQuestions } from "../helpers";
@@ -37,7 +37,7 @@ function normalizeQuestion(q: SeedQuestion, order: number) {
     order,
     skillLevel: q.skillLevel,
     timeLimitSeconds: q.timeLimitSeconds,
-    metadata: q.metadata ?? undefined,
+    metadata: (q.metadata as Prisma.InputJsonValue | undefined) ?? undefined,
   };
 }
 
