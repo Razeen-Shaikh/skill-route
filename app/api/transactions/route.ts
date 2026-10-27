@@ -38,18 +38,15 @@ export async function GET(req: NextRequest) {
         ...(filter && Object.values(TransactionType).includes(filter) && { type: filter }),
     };
 
-    const transactions = await prisma.coinTransaction.findMany({
-        where: whereClause,
-        orderBy: { transactionAt: "desc" },
-        skip: (page - 1) * limit,
-        take: limit,
-    });
-
-    if (!transactions) {
-        return NextResponse.json({ error: "Transactions not found" }, { status: 404 });
-    }
-
-    const totalTransactions = await prisma.coinTransaction.count({ where: whereClause });
+    const [transactions, totalTransactions] = await Promise.all([
+        prisma.coinTransaction.findMany({
+            where: whereClause,
+            orderBy: { transactionAt: "desc" },
+            skip: (page - 1) * limit,
+            take: limit,
+        }),
+        prisma.coinTransaction.count({ where: whereClause }),
+    ]);
     const totalPages = Math.ceil(totalTransactions / limit);
 
     return NextResponse.json({ transactions, totalPages });

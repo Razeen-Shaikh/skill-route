@@ -39,6 +39,34 @@ enum DifficultyLevel {
   MEDIUM
 }
 
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum QuizType {
+  PRACTICE
+  INTERVIEW
+  CHALLENGE
+  ASSESSMENT
+  ROADMAP_CHECKPOINT
+}
+
+enum QuizTimingMode {
+  NONE
+  FIXED_PER_QUIZ
+  FIXED_PER_QUESTION
+  CHALLENGE_WINDOW
+}
+
+enum QuestionType {
+  MCQ
+  MULTIPLE_SELECT
+  TRUE_FALSE
+  CODING
+}
+
 enum RoadmapType {
   AI
   BACKEND
@@ -163,6 +191,7 @@ model UserProfile {
   userBadges      UserBadge[]
   streaks         UserStreak?
 
+  @@index([xp(sort: Desc)])
   @@map("users_profile")
 }
 
@@ -211,15 +240,18 @@ model UserStreak {
 }
 
 model UserQuizAttempt {
-  id          String    @id @default(uuid())
-  quizId      String
-  startedAt   DateTime  @default(now())
-  completedAt DateTime?
-  score       Int       @default(0)
-  isPassed    Boolean   @default(false)
-  feedback    String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now()) @updatedAt
+  id              String    @id @default(uuid())
+  quizId          String
+  attemptNumber   Int       @default(1)
+  isBestAttempt   Boolean   @default(true)
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+  timeSpentSeconds Int?
+  score           Int       @default(0)
+  isPassed        Boolean   @default(false)
+  feedback        String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now()) @updatedAt
 
   profileId        String
   profile          UserProfile           @relation(fields: [profileId], references: [userId], onDelete: Cascade)
@@ -228,8 +260,9 @@ model UserQuizAttempt {
   lastActivities   LastActivity[]
   userProgress     UserProgress[]
 
-  @@unique([profileId, quizId])
   @@index([quizId, profileId])
+  @@index([quizId, score(sort: Desc)])
+  @@index([profileId, quizId, isBestAttempt])
   @@map("user_quiz_attempts")
 }
 
@@ -237,6 +270,8 @@ model UserQuestionAttempt {
   id                String   @id @default(uuid())
   questionId        String
   selectedOption    String
+  selectedOptions   String[] @default([])
+  answerPayload     Json?
   isCorrect         Boolean
   xpEarned          Int      @default(0)
   userQuizAttemptId String
@@ -433,8 +468,13 @@ model Quiz {
   id                String          @id @default(uuid())
   title             String
   slug              String          @unique
+  description       String?
+  quizType          QuizType        @default(PRACTICE)
+  skillLevel        SkillLevel      @default(BEGINNER)
   isTimed           Boolean         @default(false)
   timeLimit         Int?
+  timingMode        QuizTimingMode  @default(NONE)
+  timingConfig      Json?
   maxScore          Int             @default(100)
   passPercentage    Int             @default(50)
   difficulty        DifficultyLevel @default(EASY)
@@ -442,7 +482,11 @@ model Quiz {
   tutorialLocked    Boolean?        @default(false)
   questionCount     Int?            @default(0)
   estimatedDuration Int?
-  tutorialId        String
+  randomizeQuestions Boolean        @default(false)
+  randomizeOptions   Boolean        @default(false)
+  tutorialId        String?
+  categoryId        String?
+  companyId         String?
   stepsId           String?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @default(now()) @updatedAt
@@ -450,29 +494,73 @@ model Quiz {
 
   questions      QuizQuestion[]
   attempts       UserQuizAttempt[]
-  tutorial       Tutorial          @relation(fields: [tutorialId], references: [id], onDelete: Cascade)
+  tutorial       Tutorial?         @relation(fields: [tutorialId], references: [id], onDelete: Cascade)
+  category       QuizCategory?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  company        Company?          @relation(fields: [companyId], references: [id], onDelete: SetNull)
   tags           Tag[]             @relation("QuizTags")
   steps          RoadmapStep?      @relation(fields: [stepsId], references: [id])
   lastActivities LastActivity[]
 
-  @@unique([slug, tutorialId])
+  @@index([tutorialId])
+  @@index([quizType, skillLevel])
+  @@index([categoryId])
+  @@index([companyId])
   @@map("quizzes")
 }
 
+model QuizCategory {
+  id          String         @id @default(uuid())
+  name        String         @unique
+  slug        String         @unique
+  description String?
+  icon        String?
+  parentId    String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @default(now()) @updatedAt
+
+  parent   QuizCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children QuizCategory[] @relation("CategoryHierarchy")
+  quizzes  Quiz[]
+
+  @@map("quiz_categories")
+}
+
+model Company {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  logoUrl     String?
+  website     String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  quizzes Quiz[]
+
+  @@map("companies")
+}
+
 model QuizQuestion {
-  id            String   @id @default(uuid())
-  questionText  String
-  options       String[]
-  correctAnswer String   @default("")
-  xp            Int      @default(0)
-  quizId        String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
+  id              String       @id @default(uuid())
+  questionText    String
+  questionType    QuestionType @default(MCQ)
+  options         String[]
+  correctAnswer   String       @default("")
+  correctAnswers  String[]     @default([])
+  explanation     String?
+  xp              Int          @default(0)
+  order           Int          @default(0)
+  skillLevel      SkillLevel   @default(BEGINNER)
+  timeLimitSeconds Int?
+  metadata        Json?
+  quizId          String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @default(now()) @updatedAt
 
   quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
   @@unique([quizId, questionText])
-  @@index([quizId])
+  @@index([quizId, order])
   @@map("quiz_questions")
 }
 

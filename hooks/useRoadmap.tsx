@@ -1,9 +1,12 @@
 import { markComplete } from "@/lib/api";
+import { RoadmapStepWithTutorials } from "@/components/roadmaps/RoadmapStepUnit";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
 const fetchRoadmap = async (roadmapId: string) => {
-  const { data } = await axios.get("/api/roadmaps/steps?roadmapId=" + roadmapId);
+  const { data } = await axios.get<RoadmapStepWithTutorials[]>(
+    "/api/roadmaps/steps?roadmapId=" + roadmapId
+  );
   return data;
 };
 

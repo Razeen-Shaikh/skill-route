@@ -1,8 +1,23 @@
 -- CreateEnum
+CREATE TYPE "BadgeCriteria" AS ENUM ('XP', 'LEVEL', 'QUIZZES_PASSED', 'TUTORIALS_COMPLETED', 'ROADMAP_STEPS', 'STREAK', 'COINS', 'PERFECT_QUIZ');
+
+-- CreateEnum
 CREATE TYPE "ActivityType" AS ENUM ('BADGE', 'COINS', 'LOGIN', 'QUIZ', 'ROADMAP', 'STEP', 'TUTORIAL', 'TRANSACTION', 'XP', 'LEVEL');
 
 -- CreateEnum
 CREATE TYPE "DifficultyLevel" AS ENUM ('EASY', 'HARD', 'MEDIUM');
+
+-- CreateEnum
+CREATE TYPE "SkillLevel" AS ENUM ('BEGINNER', 'INTERMEDIATE', 'ADVANCED');
+
+-- CreateEnum
+CREATE TYPE "QuizType" AS ENUM ('PRACTICE', 'INTERVIEW', 'CHALLENGE', 'ASSESSMENT', 'ROADMAP_CHECKPOINT');
+
+-- CreateEnum
+CREATE TYPE "QuizTimingMode" AS ENUM ('NONE', 'FIXED_PER_QUIZ', 'FIXED_PER_QUESTION', 'CHALLENGE_WINDOW');
+
+-- CreateEnum
+CREATE TYPE "QuestionType" AS ENUM ('MCQ', 'MULTIPLE_SELECT', 'TRUE_FALSE', 'CODING');
 
 -- CreateEnum
 CREATE TYPE "RoadmapType" AS ENUM ('AI', 'BACKEND', 'DEVOPS', 'FRONTEND', 'FULLSTACK', 'DATA_SCIENCE', 'MOBILE', 'MACHINE_LEARNING', 'MERN', 'MEAN', 'BLOCKCHAIN', 'CYBER_SECURITY', 'GAMING', 'CLOUD', 'SOFTWARE_TESTING');
@@ -118,8 +133,11 @@ CREATE TABLE "users_streaks" (
 CREATE TABLE "user_quiz_attempts" (
     "id" TEXT NOT NULL,
     "quizId" TEXT NOT NULL,
+    "attemptNumber" INTEGER NOT NULL DEFAULT 1,
+    "isBestAttempt" BOOLEAN NOT NULL DEFAULT true,
     "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "completedAt" TIMESTAMP(3),
+    "timeSpentSeconds" INTEGER,
     "score" INTEGER NOT NULL DEFAULT 0,
     "isPassed" BOOLEAN NOT NULL DEFAULT false,
     "feedback" TEXT,
@@ -135,6 +153,8 @@ CREATE TABLE "user_question_attempts" (
     "id" TEXT NOT NULL,
     "questionId" TEXT NOT NULL,
     "selectedOption" TEXT NOT NULL,
+    "selectedOptions" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "answerPayload" JSONB,
     "isCorrect" BOOLEAN NOT NULL,
     "xpEarned" INTEGER NOT NULL DEFAULT 0,
     "userQuizAttemptId" TEXT NOT NULL,
@@ -171,16 +191,19 @@ CREATE TABLE "users_badges" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "user_id" TEXT NOT NULL,
 
-    CONSTRAINT "users_badges_pkey" PRIMARY KEY ("user_id")
+    CONSTRAINT "users_badges_pkey" PRIMARY KEY ("user_id","badgeId")
 );
 
 -- CreateTable
 CREATE TABLE "badges" (
     "id" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "imageUrl" TEXT NOT NULL,
-    "xpReq" INTEGER NOT NULL DEFAULT 0,
+    "imageUrl" TEXT NOT NULL DEFAULT '',
     "description" TEXT,
+    "criteriaType" "BadgeCriteria" NOT NULL DEFAULT 'XP',
+    "criteriaValue" INTEGER NOT NULL DEFAULT 0,
+    "xpReq" INTEGER NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -287,8 +310,13 @@ CREATE TABLE "quizzes" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
+    "description" TEXT,
+    "quizType" "QuizType" NOT NULL DEFAULT 'PRACTICE',
+    "skillLevel" "SkillLevel" NOT NULL DEFAULT 'BEGINNER',
     "isTimed" BOOLEAN NOT NULL DEFAULT false,
     "timeLimit" INTEGER,
+    "timingMode" "QuizTimingMode" NOT NULL DEFAULT 'NONE',
+    "timingConfig" JSONB,
     "maxScore" INTEGER NOT NULL DEFAULT 100,
     "passPercentage" INTEGER NOT NULL DEFAULT 50,
     "difficulty" "DifficultyLevel" NOT NULL DEFAULT 'EASY',
@@ -296,7 +324,11 @@ CREATE TABLE "quizzes" (
     "tutorialLocked" BOOLEAN DEFAULT false,
     "questionCount" INTEGER DEFAULT 0,
     "estimatedDuration" INTEGER,
-    "tutorialId" TEXT NOT NULL,
+    "randomizeQuestions" BOOLEAN NOT NULL DEFAULT false,
+    "randomizeOptions" BOOLEAN NOT NULL DEFAULT false,
+    "tutorialId" TEXT,
+    "categoryId" TEXT,
+    "companyId" TEXT,
     "stepsId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -306,12 +338,47 @@ CREATE TABLE "quizzes" (
 );
 
 -- CreateTable
+CREATE TABLE "quiz_categories" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "description" TEXT,
+    "icon" TEXT,
+    "parentId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "quiz_categories_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "companies" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "logoUrl" TEXT,
+    "website" TEXT,
+    "description" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "companies_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "quiz_questions" (
     "id" TEXT NOT NULL,
     "questionText" TEXT NOT NULL,
+    "questionType" "QuestionType" NOT NULL DEFAULT 'MCQ',
     "options" TEXT[],
     "correctAnswer" TEXT NOT NULL DEFAULT '',
+    "correctAnswers" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "explanation" TEXT,
     "xp" INTEGER NOT NULL DEFAULT 0,
+    "order" INTEGER NOT NULL DEFAULT 0,
+    "skillLevel" "SkillLevel" NOT NULL DEFAULT 'BEGINNER',
+    "timeLimitSeconds" INTEGER,
+    "metadata" JSONB,
     "quizId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -390,13 +457,16 @@ CREATE UNIQUE INDEX "users_progress_profileId_tutorialId_key" ON "users_progress
 CREATE INDEX "user_quiz_attempts_quizId_profileId_idx" ON "user_quiz_attempts"("quizId", "profileId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "user_quiz_attempts_profileId_quizId_key" ON "user_quiz_attempts"("profileId", "quizId");
+CREATE INDEX "user_quiz_attempts_quizId_score_idx" ON "user_quiz_attempts"("quizId", "score" DESC);
+
+-- CreateIndex
+CREATE INDEX "user_quiz_attempts_profileId_quizId_isBestAttempt_idx" ON "user_quiz_attempts"("profileId", "quizId", "isBestAttempt");
 
 -- CreateIndex
 CREATE INDEX "last_activity_userId_createdAt_idx" ON "last_activity"("userId", "createdAt");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_badges_user_id_badgeId_key" ON "users_badges"("user_id", "badgeId");
+CREATE UNIQUE INDEX "badges_slug_key" ON "badges"("slug");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "coins_transactions_profileId_transactionAt_key" ON "coins_transactions"("profileId", "transactionAt");
@@ -411,10 +481,28 @@ CREATE UNIQUE INDEX "roadmaps_progress_userId_roadmapId_key" ON "roadmaps_progre
 CREATE UNIQUE INDEX "quizzes_slug_key" ON "quizzes"("slug");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "quizzes_slug_tutorialId_key" ON "quizzes"("slug", "tutorialId");
+CREATE INDEX "quizzes_quizType_skillLevel_idx" ON "quizzes"("quizType", "skillLevel");
 
 -- CreateIndex
-CREATE INDEX "quiz_questions_quizId_idx" ON "quiz_questions"("quizId");
+CREATE INDEX "quizzes_categoryId_idx" ON "quizzes"("categoryId");
+
+-- CreateIndex
+CREATE INDEX "quizzes_companyId_idx" ON "quizzes"("companyId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "quiz_categories_name_key" ON "quiz_categories"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "quiz_categories_slug_key" ON "quiz_categories"("slug");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "companies_name_key" ON "companies"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "companies_slug_key" ON "companies"("slug");
+
+-- CreateIndex
+CREATE INDEX "quiz_questions_quizId_order_idx" ON "quiz_questions"("quizId", "order");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "quiz_questions_quizId_questionText_key" ON "quiz_questions"("quizId", "questionText");
@@ -525,7 +613,16 @@ ALTER TABLE "tutorials" ADD CONSTRAINT "tutorials_nextTutorialId_fkey" FOREIGN K
 ALTER TABLE "quizzes" ADD CONSTRAINT "quizzes_tutorialId_fkey" FOREIGN KEY ("tutorialId") REFERENCES "tutorials"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "quizzes" ADD CONSTRAINT "quizzes_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "quiz_categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "quizzes" ADD CONSTRAINT "quizzes_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "quizzes" ADD CONSTRAINT "quizzes_stepsId_fkey" FOREIGN KEY ("stepsId") REFERENCES "steps"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "quiz_categories" ADD CONSTRAINT "quiz_categories_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "quiz_categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "quiz_questions" ADD CONSTRAINT "quiz_questions_quizId_fkey" FOREIGN KEY ("quizId") REFERENCES "quizzes"("id") ON DELETE CASCADE ON UPDATE CASCADE;

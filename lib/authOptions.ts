@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import { JWT } from "next-auth/jwt";
 import { Account, Session, User } from "next-auth";
 import { AdapterUser } from "next-auth/adapters";
+import { allocateUsername } from "@/lib/username";
 
 export const authOptions = {
     providers: [
@@ -68,49 +69,62 @@ export const authOptions = {
             if (!account) {
                 return false;
             }
-            if (account?.provider === "google" || account?.provider === "github") {
-                const userEmail = user.email || `${user.id}@${account.provider}.com`;
+            if (account.provider === "google" || account.provider === "github") {
+                if (!user.email) {
+                    return false;
+                }
 
-                // Check if user exists
+                const userEmail = user.email;
                 let existingUser = await prisma.user.findUnique({ where: { email: userEmail } });
 
                 if (!existingUser) {
-                    const baseUsername = (user.name?.replace(/\s+/g, "").toLowerCase() || "user");
-                    let username = baseUsername;
-                    let counter = 1;
-
-                    // Ensure unique username
-                    while (await prisma.user.findUnique({ where: { username } })) {
-                        username = `${baseUsername}${counter}`;
-                        counter++;
-                    }
-
-                    existingUser = await prisma.user.create({
-                        data: {
-                            email: userEmail,
-                            username,
-                            firstName: user.name?.split(" ")[0] || "User",
-                            role: "USER",
-                            emailVerified: true,
-                            profile: {
-                                create: {
-                                    theme: "LIGHT",
-                                    avatar: user.image,
-                                    coinWallet: { create: {} },
-                                    streaks: { create: {} },
+                    const emailName = userEmail.split("@")[0] ?? "";
+                    for (let attempt = 0; attempt < 3 && !existingUser; attempt++) {
+                        const username = await allocateUsername(user.name || emailName || "user");
+                        try {
+                            existingUser = await prisma.user.create({
+                                data: {
+                                    email: userEmail,
+                                    username,
+                                    firstName: user.name?.split(" ")[0] || "User",
+                                    role: "USER",
+                                    emailVerified: true,
+                                    profile: {
+                                        create: {
+                                            theme: "LIGHT",
+                                            avatar: user.image,
+                                            coinWallet: { create: {} },
+                                            streaks: { create: {} },
+                                        },
+                                    },
                                 },
-                            },
-                        },
-                    });
+                            });
+                        } catch (error) {
+                            const isTaken = typeof error === "object"
+                                && error !== null
+                                && "code" in error
+                                && error.code === "P2002";
+                            if (!isTaken) throw error;
+                            existingUser = await prisma.user.findUnique({ where: { email: userEmail } });
+                        }
+                    }
                 }
 
+                if (!existingUser) {
+                    return false;
+                }
+
+                // Attach DB identity so jwt/session use Prisma UUID, not provider id
+                user.id = existingUser.id;
+                user.role = existingUser.role;
                 return true;
             }
             return true;
         },
-        async jwt({ token, user }: { token: JWT; user: User | AdapterUser }) {
+        async jwt({ token, user }: { token: JWT; user?: User | AdapterUser }) {
             if (user) {
                 token.id = user.id;
+                token.email = user.email;
                 token.avatar = user.image;
                 token.role = user.role;
             }
@@ -125,7 +139,8 @@ export const authOptions = {
         }) {
             if (session.user) {
                 session.user.id = token.id as string;
-                session.user.image = token.avatarUrl as string;
+                session.user.email = token.email ?? session.user.email;
+                session.user.image = (token.avatar as string | undefined) ?? session.user.image;
                 session.user.role = token.role as string;
             }
             return session;

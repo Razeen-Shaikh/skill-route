@@ -68,6 +68,17 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 email: [alice@mail.com](mailto:alice@mail.com)
 password: password123
 
+### Google / GitHub OAuth
+
+1. Copy `.env.example` values into `.env` and set `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (and GitHub if needed).
+2. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → your OAuth 2.0 Client ID (Web application), add:
+   - **Authorized JavaScript origins:** `http://localhost:3000`
+   - **Authorized redirect URIs:** `http://localhost:3000/api/auth/callback/google`
+3. For GitHub OAuth Apps, set the callback to `http://localhost:3000/api/auth/callback/github`.
+4. Restart `npm run dev` after changing `.env`.
+
+A `redirect_uri_mismatch` error means the redirect URI above is missing or mistyped in the provider console (must match exactly, including `http` vs `https` and port).
+
 ### Close Docker
 
 ```bash

@@ -2,7 +2,7 @@ import { UserStreak, LastActivity, UserBadge, CoinWallet, User, UserProfile, Bad
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAuthUser } from '@/lib/auth';
-import { ensureGamificationProfile, refreshUserStreak } from '@/lib/gamification';
+import { refreshUserStreak } from '@/lib/gamification';
 
 export async function GET() {
     try {
@@ -13,7 +13,6 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        await ensureGamificationProfile(userId);
         await refreshUserStreak(userId);
 
         const [userProfile, totalTutorials, totalQuizzes] = await Promise.all([

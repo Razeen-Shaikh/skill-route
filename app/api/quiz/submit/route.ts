@@ -66,8 +66,9 @@ export async function POST(request: NextRequest) {
         const scorePercentage = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
         const isPassed = scorePercentage >= quiz.passPercentage;
 
-        const existingAttempt = await prisma.userQuizAttempt.findUnique({
-            where: { profileId_quizId: { profileId: userId, quizId } },
+        const existingAttempt = await prisma.userQuizAttempt.findFirst({
+            where: { profileId: userId, quizId },
+            orderBy: { score: 'desc' },
         });
 
         const isImprovement = !existingAttempt || totalScore > existingAttempt.score;
@@ -170,25 +171,31 @@ export async function POST(request: NextRequest) {
                 }
             }
 
-            const tutorialProgress = await tx.userProgress.findUnique({
-                where: { profileId_tutorialId: { profileId: userId, tutorialId: quiz.tutorialId } },
-            });
+            const tutorialProgress = quiz.tutorialId
+                ? await tx.userProgress.findUnique({
+                    where: { profileId_tutorialId: { profileId: userId, tutorialId: quiz.tutorialId } },
+                })
+                : null;
 
-            await tx.userProgress.upsert({
-                where: { profileId_tutorialId: { profileId: userId, tutorialId: quiz.tutorialId } },
-                update: {
-                    bestScore: Math.max(tutorialProgress?.bestScore ?? 0, totalScore),
-                    attempts: { increment: 1 },
-                },
-                create: {
-                    profileId: userId,
-                    tutorialId: quiz.tutorialId,
-                    bestScore: totalScore,
-                    attempts: 1,
-                },
-            });
+            if (quiz.tutorialId) {
+                await tx.userProgress.upsert({
+                    where: { profileId_tutorialId: { profileId: userId, tutorialId: quiz.tutorialId } },
+                    update: {
+                        bestScore: Math.max(tutorialProgress?.bestScore ?? 0, totalScore),
+                        attempts: { increment: 1 },
+                    },
+                    create: {
+                        profileId: userId,
+                        tutorialId: quiz.tutorialId,
+                        bestScore: totalScore,
+                        attempts: 1,
+                    },
+                });
+            }
 
-            const tutorialCompletion = await completeTutorialIfReady(tx, userId, quiz.tutorialId);
+            const tutorialCompletion = quiz.tutorialId
+                ? await completeTutorialIfReady(tx, userId, quiz.tutorialId)
+                : { tutorialCompleted: false, nextTutorialId: null };
 
             return {
                 attemptId: userQuizAttempt.id,

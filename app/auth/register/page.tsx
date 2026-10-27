@@ -15,7 +15,7 @@ import { getAuthAlternateLink } from "@/lib/authNav";
 
 const Register = () => {
   const alternateAuthLink = getAuthAlternateLink("register");
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -30,11 +30,11 @@ const Register = () => {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ username, email, password }),
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Registration failed");
+      if (!response.ok) throw new Error(data.error || data.message || "Registration failed");
 
       window.location.href = "/auth/login";
     } catch (err: unknown) {
@@ -51,7 +51,7 @@ const Register = () => {
   const handleOAuthRegister = async (provider: "google" | "github") => {
     setIsLoading(true);
     try {
-      await signIn(provider, { callbackUrl: "/auth/login" });
+      await signIn(provider, { callbackUrl: "/dashboard" });
     } catch {
       setError("OAuth login failed. Try again.");
     } finally {
@@ -100,9 +100,10 @@ const Register = () => {
             <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
               className="pl-10 border p-3 w-full rounded-lg bg-muted/20 text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               required
             />

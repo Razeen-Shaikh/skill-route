@@ -119,6 +119,123 @@ export async function completeTutorialIfReady(
     };
 }
 
+type TutorialListItem = {
+    id: string;
+    title: string;
+    description: string | null;
+    category: string | null;
+    isLocked: boolean;
+    cost: number;
+    difficulty: string;
+    nextTutorialId: string | null;
+    createdAt: Date;
+    quizzes: { id: string }[];
+};
+
+export async function listTutorialsForUser(userId: string | undefined, category?: string | null) {
+    const tutorials = await prisma.tutorial.findMany({
+        where: category ? { category } : {},
+        orderBy: { createdAt: "asc" },
+        select: {
+            id: true,
+            title: true,
+            description: true,
+            category: true,
+            isLocked: true,
+            cost: true,
+            difficulty: true,
+            nextTutorialId: true,
+            createdAt: true,
+            quizzes: { select: { id: true } },
+        },
+    });
+
+    if (!userId) {
+        return tutorials.map((tutorial) => ({
+            ...tutorial,
+            isCompleted: false,
+            allQuizzesPassed: false,
+            quizzes: tutorial.quizzes.map((quiz) => ({ ...quiz, attempts: [] })),
+        }));
+    }
+
+    return enrichTutorialList(userId, tutorials);
+}
+
+async function enrichTutorialList(userId: string, tutorials: TutorialListItem[]) {
+    const listedQuizIds = tutorials.flatMap((tutorial) => tutorial.quizzes.map((quiz) => quiz.id));
+
+    const [links, quizLinks, progressRows, passedAttempts, listedAttempts] = await Promise.all([
+        prisma.tutorial.findMany({
+            select: { id: true, nextTutorialId: true },
+        }),
+        prisma.quiz.findMany({
+            where: { tutorialId: { not: null } },
+            select: { id: true, tutorialId: true },
+        }),
+        prisma.userProgress.findMany({
+            where: { profileId: userId, tutorialId: { in: tutorials.map((tutorial) => tutorial.id) } },
+            select: { tutorialId: true, isCompleted: true },
+        }),
+        prisma.userQuizAttempt.findMany({
+            where: { profileId: userId, isPassed: true },
+            select: { quizId: true },
+            distinct: ["quizId"],
+        }),
+        listedQuizIds.length === 0
+            ? Promise.resolve([])
+            : prisma.userQuizAttempt.findMany({
+                where: { profileId: userId, quizId: { in: listedQuizIds } },
+                select: { quizId: true, score: true, isPassed: true, profileId: true },
+                orderBy: { completedAt: "desc" },
+            }),
+    ]);
+
+    const previousIdByTutorial = new Map<string, string>();
+    for (const link of links) {
+        if (link.nextTutorialId) previousIdByTutorial.set(link.nextTutorialId, link.id);
+    }
+
+    const quizIdsByTutorial = new Map<string, string[]>();
+    for (const quiz of quizLinks) {
+        if (!quiz.tutorialId) continue;
+        const quizIds = quizIdsByTutorial.get(quiz.tutorialId) ?? [];
+        quizIds.push(quiz.id);
+        quizIdsByTutorial.set(quiz.tutorialId, quizIds);
+    }
+
+    const passedQuizIds = new Set(passedAttempts.map((attempt) => attempt.quizId));
+    const completedIds = new Set(
+        progressRows.filter((progress) => progress.isCompleted).map((progress) => progress.tutorialId)
+    );
+
+    const attemptByQuizId = new Map<string, (typeof listedAttempts)[number]>();
+    for (const attempt of listedAttempts) {
+        if (!attemptByQuizId.has(attempt.quizId)) attemptByQuizId.set(attempt.quizId, attempt);
+    }
+
+    const allQuizzesPassed = (tutorialId: string) => {
+        const quizIds = quizIdsByTutorial.get(tutorialId) ?? [];
+        return quizIds.length === 0 || quizIds.every((quizId) => passedQuizIds.has(quizId));
+    };
+
+    return tutorials.map((tutorial) => {
+        const previousId = previousIdByTutorial.get(tutorial.id);
+        const passed = allQuizzesPassed(tutorial.id);
+
+        return {
+            ...tutorial,
+            isLocked: previousId ? !allQuizzesPassed(previousId) : false,
+            isCompleted: completedIds.has(tutorial.id) || passed,
+            allQuizzesPassed: passed,
+            quizzes: tutorial.quizzes.map((quiz) => ({
+                ...quiz,
+                attempts: attemptByQuizId.has(quiz.id) ? [attemptByQuizId.get(quiz.id)!] : [],
+            })),
+        };
+    });
+}
+
 export async function enrichTutorialForUser<
     T extends {
         id: string;

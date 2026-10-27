@@ -76,8 +76,10 @@ export default function Leaderboard(): JSX.Element {
             >
               <TableCell className="text-center">{(index + 1) + (currentPage - 1) * itemsPerPage}</TableCell>
               <TableCell className="flex items-center space-x-3">
-                <Avatar className="w-9 h-9">
-                  <AvatarImage src={leader.avatar} />
+                <Avatar className="size-9 shrink-0">
+                  {leader.avatar ? (
+                    <AvatarImage src={leader.avatar} alt="" className="object-cover" />
+                  ) : null}
                   <AvatarFallback>
                     {leader.firstName?.charAt(0)}
                   </AvatarFallback>

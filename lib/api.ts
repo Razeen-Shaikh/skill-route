@@ -210,7 +210,18 @@ const fetchDashboardData = (email: string) => fetchData<User>(`/dashboard`, { em
 const fetchBadges = (userId: string) => fetchData<UserBadge[]>(`/badges`, { userId });
 const fetchAllBadges = () => fetchData<BadgeWithStatus[]>(`/badges`, { all: "true" });
 const fetchLeaderboard = () => fetchData<LeaderBoard[]>(`/leaderboard`);
-const fetchTheme = () => fetchData<ThemeName>(`/profile/theme`);
+const fetchTheme = async () => {
+    try {
+        const { data } = await api.get<ThemeName>("/profile/theme");
+        return data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+            return null;
+        }
+        console.error("Error fetching data from /profile/theme:", error);
+        throw new Error("Failed to fetch data");
+    }
+};
 const fetchUserCoins = (userId: string) => fetchData<CoinWallet>(`/coins`, { userId });
 const fetchLastActivity = () => fetchData<LastActivity[]>('/lastActivity');
 /**

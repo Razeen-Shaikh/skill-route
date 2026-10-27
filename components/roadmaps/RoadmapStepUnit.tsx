@@ -44,8 +44,8 @@ const RoadmapStepUnit = ({
   return (
     <motion.div
       data-id={step.id}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
       onClick={handleClick}
       className={`roadmap-step relative w-60 p-6 rounded-xl shadow-lg transition-all backdrop-blur-lg border border-white cursor-pointer ${

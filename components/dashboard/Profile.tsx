@@ -1,6 +1,6 @@
 'use client';
 
-import { Avatar, AvatarImage, AvatarFallback } from '@radix-ui/react-avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Medal, Star, Coins, Mountain, TrendingUp, Mail, Settings } from 'lucide-react';
 import React from 'react'
 import { getLevelProgressFromXp, getRankColor } from '@/lib/helper';
@@ -48,9 +48,11 @@ const Profile: React.FC<ProfilePropsType> = ({
 
     return (
         <div className="flex items-start gap-6 w-full">
-            <Avatar className="w-16 h-16 rounded-full overflow-hidden border border-gray-200 shadow-sm">
-                <AvatarImage src={avatar ?? ''} alt="User Avatar" />
-                <AvatarFallback className="flex items-center justify-center bg-gray-100 text-gray-700 font-bold text-xl">
+            <Avatar className="size-16 shrink-0 border border-gray-200 shadow-sm">
+                {avatar ? (
+                    <AvatarImage src={avatar} alt="User Avatar" className="object-cover" />
+                ) : null}
+                <AvatarFallback className="bg-gray-100 text-gray-700 font-bold text-xl">
                     {firstName?.charAt(0).toUpperCase()}
                     {lastName?.charAt(0).toUpperCase()}
                 </AvatarFallback>

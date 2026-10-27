@@ -5,7 +5,13 @@ export async function GET() {
     const roadmaps = await prisma.roadmap.findMany({
         where: {
             deletedAt: null,
-        }
+        },
+        select: {
+            id: true,
+            title: true,
+            description: true,
+        },
+        orderBy: { title: "asc" },
     });
 
     if (!roadmaps) {

@@ -9,15 +9,16 @@ import { fetchTheme } from "@/lib/api";
 import { migrateLegacyThemeStorage, toAppTheme } from "@/lib/theme";
 
 function ThemeSync() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const { setTheme } = useTheme();
-  const isAuthenticated = status === "authenticated";
+  const isAuthenticated = status === "authenticated" && Boolean(session?.user?.email);
   const hasSyncedServerTheme = useRef(false);
 
   const { data: fetchedTheme } = useQuery({
     queryKey: ["theme"],
     queryFn: () => fetchTheme(),
     enabled: isAuthenticated,
+    retry: false,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
   });

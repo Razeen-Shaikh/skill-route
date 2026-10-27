@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchTransactions } from "@/lib/api";
 import { format } from "date-fns";
@@ -21,19 +21,42 @@ export default function TransactionHistory() {
   const [page, setPage] = useState(1);
   const [limit] = useState(5);
   const [filter, setFilter] = useState<TransactionType>("ALL");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
 
   const { status } = useSession();
   const isAuthenticated = status === "authenticated";
 
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node || visible) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) setVisible(true);
+      },
+      { rootMargin: "240px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [visible]);
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["transactions", page, filter],
     queryFn: () => fetchTransactions({ page, limit, filter }),
-    enabled: !!isAuthenticated,
+    enabled: isAuthenticated && visible,
     refetchOnWindowFocus: false,
   });
 
-  if (isLoading) return <TransactionHistorySkeleton />;
-  if (error) return <p className="text-destructive p-4">Failed to load transactions.</p>;
+  if (!visible || isLoading) {
+    return (
+      <div ref={containerRef}>
+        <TransactionHistorySkeleton />
+      </div>
+    );
+  }
+
+  if (error || !data) return <p className="text-destructive p-4">Failed to load transactions.</p>;
 
   return (
     <Card className="p-4">

@@ -20,10 +20,19 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
     }
 
-    const completedQuizzes = await prisma.userQuizAttempt.findMany({
+    const allAttempts = await prisma.userQuizAttempt.findMany({
         where: { quizId: { in: quizIds }, profileId: userId },
         select: { quizId: true, score: true, completedAt: true, isPassed: true },
+        orderBy: { score: "desc" },
     });
+
+    const bestByQuiz = new Map<string, (typeof allAttempts)[number]>();
+    for (const attempt of allAttempts) {
+        if (!bestByQuiz.has(attempt.quizId)) {
+            bestByQuiz.set(attempt.quizId, attempt);
+        }
+    }
+    const completedQuizzes = Array.from(bestByQuiz.values());
 
     if (!completedQuizzes) {
         return NextResponse.json({ error: "No completed quizzes found" }, { status: 404 });

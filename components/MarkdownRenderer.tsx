@@ -1,10 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm"; // Enables tables, strikethrough, and lists
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+
+const CodeBlock = lazy(() => import("@/components/CodeBlock"));
 
 export default function MarkdownRenderer({ content }: { content: string }) {
   return (
@@ -61,15 +61,17 @@ export default function MarkdownRenderer({ content }: { content: string }) {
 
             // Block Code Styling with Syntax Highlighting
             const language = className.replace("language-", "") || "text";
+            const code = String(children).replace(/\n$/, "");
             return (
-              <SyntaxHighlighter
-                style={oneDark}
-                language={language}
-                PreTag="div"
-                className="rounded-lg overflow-hidden"
+              <Suspense
+                fallback={
+                  <pre className="rounded-lg bg-gray-900 text-gray-100 p-4 overflow-auto text-sm">
+                    <code>{code}</code>
+                  </pre>
+                }
               >
-                {String(children).replace(/\n$/, "")}
-              </SyntaxHighlighter>
+                <CodeBlock code={code} language={language} />
+              </Suspense>
             );
           },
         }}

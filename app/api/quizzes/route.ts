@@ -7,16 +7,31 @@ export async function GET() {
         const user = await getAuthUser();
 
         const quizzes = await prisma.quiz.findMany({
-            include: {
-                ...(user
-                    ? { attempts: { where: { profileId: user.id } } }
-                    : {}),
+            select: {
+                id: true,
+                title: true,
+                isTimed: true,
+                timeLimit: true,
+                maxScore: true,
+                passPercentage: true,
+                order: true,
+                tutorialLocked: true,
+                tutorialId: true,
                 tutorial: {
                     select: {
                         id: true,
                         title: true,
                     },
                 },
+                ...(user
+                    ? {
+                        attempts: {
+                            where: { profileId: user.id },
+                            select: { score: true, isPassed: true },
+                            orderBy: { completedAt: "desc" as const },
+                        },
+                    }
+                    : {}),
             },
             orderBy: { createdAt: "asc" },
         });
@@ -28,10 +43,10 @@ export async function GET() {
             }))
         );
     } catch (error) {
-        console.error('Error fetching quizzes:', error);
+        console.error("Error fetching quizzes:", error);
 
         return NextResponse.json(
-            { error: 'An error occurred while fetching quizzes.' },
+            { error: "An error occurred while fetching quizzes." },
             { status: 500 }
         );
     }

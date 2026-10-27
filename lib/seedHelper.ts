@@ -23,7 +23,8 @@ const getRandomDate = (start: Date, end: Date) => new Date(start.getTime() + Mat
 const getRandomBool = () => Math.random() < 0.5;
 let selected: { [key: string]: string } = {};
 const selectedOption = (id: string, quizQuestion: { options: string[] }) => {
-    selected = { [id]: quizQuestion.options[Math.floor(Math.random() * 4)] };
+    const idx = Math.floor(Math.random() * quizQuestion.options.length);
+    selected = { [id]: quizQuestion.options[idx] };
     return selected[id];
 }
 

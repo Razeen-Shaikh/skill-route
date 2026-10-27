@@ -122,8 +122,13 @@ export interface Quiz {
     id: string;
     title: string;
     slug: string;
+    description?: string | null;
+    quizType?: string;
+    skillLevel?: string;
     isTimed: boolean;
     timeLimit: number | null;
+    timingMode?: string;
+    timingConfig?: Record<string, unknown> | null;
     maxScore: number;
     passPercentage: number;
     difficulty: DifficultyLevel;
@@ -131,7 +136,11 @@ export interface Quiz {
     tutorialLocked: boolean | null;
     questionCount: number | null;
     estimatedDuration: number | null;
-    tutorialId: string;
+    randomizeQuestions?: boolean;
+    randomizeOptions?: boolean;
+    tutorialId: string | null;
+    categoryId?: string | null;
+    companyId?: string | null;
     stepsId: string | null;
     createdAt: Date;
     updatedAt: Date;
@@ -139,7 +148,7 @@ export interface Quiz {
 
     questions: QuizQuestion[];
     attempts: UserQuizAttempt[];
-    tutorial: Tutorial;
+    tutorial?: Tutorial;
     tags: Tag[];
     steps: RoadmapStep | null;
     lastActivities: LastActivity[];
@@ -148,9 +157,16 @@ export interface Quiz {
 export interface QuizQuestion {
     id: string;
     questionText: string;
+    questionType?: string;
     options: string[];
     correctAnswer: string;
+    correctAnswers?: string[];
+    explanation?: string | null;
     xp: number;
+    order?: number;
+    skillLevel?: string;
+    timeLimitSeconds?: number | null;
+    metadata?: Record<string, unknown> | null;
     quizId: string;
     createdAt: Date;
     updatedAt: Date;
@@ -266,8 +282,11 @@ export interface UserStreak {
 export interface UserQuizAttempt {
     id: string;
     quizId: string;
+    attemptNumber?: number;
+    isBestAttempt?: boolean;
     startedAt: Date;
     completedAt?: Date;
+    timeSpentSeconds?: number | null;
     score: number;
     isPassed: boolean;
     feedback?: string;
@@ -285,6 +304,8 @@ export interface UserQuestionAttempt {
     id: string;
     questionId: string;
     selectedOption: string;
+    selectedOptions?: string[];
+    answerPayload?: Record<string, unknown> | null;
     isCorrect: boolean;
     xpEarned: number;
     userQuizAttemptId: string;

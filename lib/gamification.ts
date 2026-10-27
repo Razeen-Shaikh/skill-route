@@ -42,12 +42,16 @@ export async function ensureGamificationProfile(userId: string) {
 }
 
 export async function refreshUserStreak(userId: string) {
-    await ensureGamificationProfile(userId);
-
     const userStreak = await prisma.userStreak.findUnique({ where: { profileId: userId } });
     const today = new Date();
 
     if (!userStreak) {
+        await prisma.coinWallet.upsert({
+            where: { profileId: userId },
+            create: { profileId: userId, balance: 0 },
+            update: {},
+        });
+
         return prisma.userStreak.create({
             data: {
                 profileId: userId,
